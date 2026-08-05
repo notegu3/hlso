@@ -1185,38 +1185,56 @@ class ProxyWebSocket {
 
                     // V5 mouse (op 16) translation & NeverStop vector extension
                     if (op === 16) {
-                        const dvIn = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
-                        let mx = null, my = null;
-                        if (u8.length === 17) {
-                            mx = dvIn.getFloat64(1, true);
-                            my = dvIn.getFloat64(9, true);
-                        } else if (u8.length === 13 || u8.length === 9) {
-                            mx = dvIn.getInt32(1, true);
-                            my = dvIn.getInt32(5, true);
-                        } else if (u8.length === 5) {
-                            mx = dvIn.getInt16(1, true);
-                            my = dvIn.getInt16(3, true);
-                        }
-                        if (mx !== null && my !== null) {
-                            if (window._3rbNeverStop) {
-                                var myPos = (this._slot === 2) ? (window._crizoTab2Pos || window._3rbMyPos) : (window._3rbMyPos || { x: 0, y: 0 });
-                                if (myPos && (myPos.x !== 0 || myPos.y !== 0)) {
-                                    var dx = mx - myPos.x;
-                                    var dy = my - myPos.y;
-                                    var len = Math.sqrt(dx * dx + dy * dy);
-                                    if (len > 0) {
-                                        mx = myPos.x + (dx / len) * 20000;
-                                        my = myPos.y + (dy / len) * 20000;
+                        if (u8.length !== 17) {
+                            const dvIn = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+                            let mx = null, my = null;
+                            if (u8.length === 13 || u8.length === 9) {
+                                mx = dvIn.getInt32(1, true); my = dvIn.getInt32(5, true);
+                            } else if (u8.length === 5) {
+                                mx = dvIn.getInt16(1, true); my = dvIn.getInt16(3, true);
+                            }
+                            if (mx !== null && my !== null) {
+                                if (window._3rbNeverStop) {
+                                    var myPos = (this._slot === 2) ? (window._crizoTab2Pos || window._3rbMyPos) : (window._3rbMyPos || { x: 0, y: 0 });
+                                    if (myPos && (myPos.x !== 0 || myPos.y !== 0)) {
+                                        var dx = mx - myPos.x;
+                                        var dy = my - myPos.y;
+                                        var len = Math.sqrt(dx * dx + dy * dy);
+                                        if (len > 0) {
+                                            mx = myPos.x + (dx / len) * 20000;
+                                            my = myPos.y + (dy / len) * 20000;
+                                        }
                                     }
                                 }
+                                const out = new DataView(new ArrayBuffer(17));
+                                out.setUint8(0, 16);
+                                out.setFloat64(1, mx, true);
+                                out.setFloat64(9, my, true);
+                                this._rawSendV5(out.buffer);
+                                return;
                             }
-                            const out = new DataView(new ArrayBuffer(17));
-                            out.setUint8(0, 16);
-                            out.setFloat64(1, mx, true);
-                            out.setFloat64(9, my, true);
-                            this._rawSendV5(out.buffer);
-                            return;
+                        } else if (window._3rbNeverStop) {
+                            const dvIn = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+                            var mx = dvIn.getFloat64(1, true);
+                            var my = dvIn.getFloat64(9, true);
+                            var myPos = (this._slot === 2) ? (window._crizoTab2Pos || window._3rbMyPos) : (window._3rbMyPos || { x: 0, y: 0 });
+                            if (myPos && (myPos.x !== 0 || myPos.y !== 0)) {
+                                var dx = mx - myPos.x;
+                                var dy = my - myPos.y;
+                                var len = Math.sqrt(dx * dx + dy * dy);
+                                if (len > 0) {
+                                    mx = myPos.x + (dx / len) * 20000;
+                                    my = myPos.y + (dy / len) * 20000;
+                                    const out = new DataView(new ArrayBuffer(17));
+                                    out.setUint8(0, 16);
+                                    out.setFloat64(1, mx, true);
+                                    out.setFloat64(9, my, true);
+                                    this._rawSendV5(out.buffer);
+                                    return;
+                                }
+                            }
                         }
+                        return;
                     }
 
                     // Throttle HSLO-origin keepalives (op 100): our onopen ping loop already
