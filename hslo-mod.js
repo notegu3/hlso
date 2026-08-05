@@ -182,12 +182,17 @@ function translateOpcode16(data, proxySelf) {
         }
 
         // Determine if cell is Food and needs sweeping
-        const isVirus = (fl & 1) !== 0;
-        const oidIsMine = ownerId !== -1 && (
-            ownerId === window._3rbPlayerId ||
+        const isTab1Mine = ownerId !== -1 && window._3rbPlayerId && (ownerId === window._3rbPlayerId);
+        const isTab2Mine = ownerId !== -1 && (
             (window._3rbPlayerId2Real && ownerId === window._3rbPlayerId2Real) ||
             (window._3rbPlayerId2 && ownerId === window._3rbPlayerId2)
         );
+        const oidIsMine = isTab1Mine || isTab2Mine;
+        if (isTab1Mine) {
+            window._3rbMyPos = { x: x, y: y };
+        } else if (isTab2Mine) {
+            window._crizoTab2Pos = { x: x, y: y };
+        }
         // Better food classification: nameless, ownerless, non-virus, and not ejected mass (!(fl & 32))
         const isFood = !isVirus && !(fl & 32) && name.length === 0 && ownerId === -1;
 
