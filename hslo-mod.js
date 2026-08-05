@@ -182,6 +182,7 @@ function translateOpcode16(data, proxySelf) {
         }
 
         // Determine if cell is Food and needs sweeping
+        const isVirus = (fl & 1) !== 0;
         const isTab1Mine = ownerId !== -1 && window._3rbPlayerId && (ownerId === window._3rbPlayerId);
         const isTab2Mine = ownerId !== -1 && (
             (window._3rbPlayerId2Real && ownerId === window._3rbPlayerId2Real) ||
