@@ -1183,17 +1183,21 @@ class ProxyWebSocket {
                         return;
                     }
 
-                    // V5 mouse (op 16) = [16, float64 x, float64 y] = 17B. Translate the
-                    // classic int32/int16 layouts; a 17B packet is already V5-shaped.
-                    if (op === 16 && u8.length !== 17) {
+                    // V5 mouse (op 16) translation & NeverStop vector extension
+                    if (op === 16) {
                         const dvIn = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
                         let mx = null, my = null;
-                        if (u8.length === 13 || u8.length === 9) {
-                            mx = dvIn.getInt32(1, true); my = dvIn.getInt32(5, true);
+                        if (u8.length === 17) {
+                            mx = dvIn.getFloat64(1, true);
+                            my = dvIn.getFloat64(9, true);
+                        } else if (u8.length === 13 || u8.length === 9) {
+                            mx = dvIn.getInt32(1, true);
+                            my = dvIn.getInt32(5, true);
                         } else if (u8.length === 5) {
-                            mx = dvIn.getInt16(1, true); my = dvIn.getInt16(3, true);
+                            mx = dvIn.getInt16(1, true);
+                            my = dvIn.getInt16(3, true);
                         }
-                        if (mx !== null) {
+                        if (mx !== null && my !== null) {
                             if (window._3rbNeverStop) {
                                 var myPos = (this._slot === 2) ? (window._crizoTab2Pos || window._3rbMyPos) : (window._3rbMyPos || { x: 0, y: 0 });
                                 if (myPos && (myPos.x !== 0 || myPos.y !== 0)) {
