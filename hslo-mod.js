@@ -567,9 +567,9 @@ class ProxyWebSocket {
         this._socketLabel = window._3rbSocketCounter ? `ws${++window._3rbSocketCounter}` : (() => { window._3rbSocketCounter = 1; return 'ws1'; })();
         log('Created socket', this._socketLabel, 'for', targetUrl);
 
-        // 3rb.io REQUIRES subprotocol "algamees" — without it the server rejects as "Spam"
+        // 3rb.io REQUIRES subprotocol "ghmarab" — without it the server rejects as "Spam"
         if (is3rb) {
-            this.ws = new OriginalWebSocket(targetUrl, 'algamees');
+            this.ws = new OriginalWebSocket(targetUrl, 'ghmarab');
         } else {
             this.ws = protocols ? new OriginalWebSocket(targetUrl, protocols) : new OriginalWebSocket(targetUrl);
         }
