@@ -2304,22 +2304,40 @@ window._3rbStopSkinSync = function () {
 // HSLO MOD EXTENSIONS: Auto-Respawn Tab 2, Camera Lock, Tab 2 Hotkeys
 // ═══════════════════════════════════════════════════════════════
 (function initHsloExtensions() {
-    // 1. Settings state persistence
-    window._3rbNeverStop = localStorage.getItem('_3rbNeverStop') === 'true';
-    window._3rbAutoRespawnTab2 = localStorage.getItem('_3rbAutoRespawnTab2') === 'true';
-    window._3rbLockCameraPrimary = localStorage.getItem('_3rbLockCameraPrimary') !== 'false'; // default true
-    window._3rbKeyTab2Split = localStorage.getItem('_3rbKeyTab2Split') || 'KeyE';
-    window._3rbKeyTab2Double = localStorage.getItem('_3rbKeyTab2Double') || 'KeyR';
-    window._3rbKeyTab2Trick = localStorage.getItem('_3rbKeyTab2Trick') || 'KeyT';
 
-    // 2. Auto-Respawn Secondary Tab (Tab 2) Near Primary Tab (Tab 1)
+    // ── 1. Load saved settings ──────────────────────────────────
+    window._3rbNeverStop        = localStorage.getItem('_3rbNeverStop')        === 'true';
+    window._3rbAutoRespawnTab2  = localStorage.getItem('_3rbAutoRespawnTab2')  === 'true';
+    window._3rbLockCameraPrimary= localStorage.getItem('_3rbLockCameraPrimary')!== 'false'; // default ON
+    window._3rbKeyTab2Split     = localStorage.getItem('_3rbKeyTab2Split')     || 'KeyZ';
+    window._3rbKeyTab2Double    = localStorage.getItem('_3rbKeyTab2Double')    || 'KeyX';
+    window._3rbKeyTab2Trick     = localStorage.getItem('_3rbKeyTab2Trick')     || 'KeyC';
+    window._3rbMaxRespawnDist   = Number(localStorage.getItem('_3rbMaxRespawnDist') || 2500);
+
+    // ── 2. Auto-Respawn Tab 2 near Tab 1 ───────────────────────
+    // Strategy: send op=17 (split) 16 times rapidly → cell becomes tiny → dies instantly → auto-respawn
+    function killTab2() {
+        var proxy2 = window._3rbProxySlot2;
+        if (!proxy2) return;
+        var ws2 = window._3rbSlot2Sock;
+        if (!ws2 || ws2.readyState !== 1) return;
+        // Send 16 splits quickly to force death
+        for (var i = 0; i < 16; i++) {
+            (function(d) {
+                setTimeout(function() {
+                    try { ws2._nativeSend(new Uint8Array([17]).buffer); } catch(e) {}
+                }, d);
+            })(i * 30);
+        }
+    }
+
     function checkTab2AutoRespawn() {
         if (!window._3rbAutoRespawnTab2) return;
         var pos1 = window._3rbMyPos;
         var pos2 = window._crizoTab2Pos;
         if (!pos1 || !pos2) return;
-        if (pos1.x === 0 && pos1.y === 0) return; // Primary tab dead / unpositioned
-        if (pos2.x === 0 && pos2.y === 0) return; // Secondary tab dead / unpositioned
+        if (pos1.x === 0 && pos1.y === 0) return;
+        if (pos2.x === 0 && pos2.y === 0) return;
 
         var dx = pos2.x - pos1.x;
         var dy = pos2.y - pos1.y;
@@ -2330,31 +2348,92 @@ window._3rbStopSkinSync = function () {
             var ws2 = window._3rbSlot2Sock;
             if (ws2 && ws2.readyState === 1) {
                 var now = Date.now();
-                if (now - (ws2._lastAutoRespawn || 0) > 1200) {
+                if (now - (ws2._lastAutoRespawn || 0) > 3000) {
                     ws2._lastAutoRespawn = now;
-                    console.log('%c[MAD PLUS] 🔄 Tab 2 spawned too far (' + Math.round(dist) + ' > ' + maxDist + ') — Auto-respawning Tab 2...', 'color:#ffb703;font-weight:bold');
-                    try {
-                        ws2._nativeSend(new Uint8Array([0x00]).buffer);
-                    } catch(e) {}
+                    console.log('%c[MAD PLUS] 🔄 Tab 2 too far (' + Math.round(dist) + ') — killing & respawning...', 'color:#ffb703;font-weight:bold');
+                    killTab2();
                 }
             }
         }
     }
-    setInterval(checkTab2AutoRespawn, 500);
+    setInterval(checkTab2AutoRespawn, 1000);
 
-    // 3. Secondary Tab (Tab 2) Split Actions (Single, Double, Tricksplit 16)
+    // ── 3. Camera Lock on Primary Tab ───────────────────────────
+    // Hook bundle.js camera object A.x / A.y to be overridden when lock is active
+    (function hookCamera() {
+        var tries = 0;
+        var interval = setInterval(function() {
+            // Bundle exposes the camera object as a class with .x .y .isAlive
+            // We look for it via window.se (the main game engine exposed by bundle.js)
+            if (window.se && window.se.camera) {
+                var origMove = window.se.camera.move;
+                if (typeof origMove === 'function') {
+                    window.se.camera.move = function() {
+                        origMove.call(this);
+                        if (window._3rbLockCameraPrimary && window._3rbMyPos && window._3rbMyPos.x !== 0) {
+                            // After camera moves toward A (which may be average of both tabs),
+                            // snap camera toward Tab 1 position only
+                            this.x += (window._3rbMyPos.x - this.x) * 0.15;
+                            this.y += (window._3rbMyPos.y - this.y) * 0.15;
+                        }
+                    };
+                    console.log('[MAD PLUS] ✓ Camera lock hook installed via window.se.camera');
+                    clearInterval(interval);
+                    return;
+                }
+            }
+            // Fallback: try bundle's internal A object (camera target)
+            if (window.A && typeof window.A.x === 'number') {
+                var _origAx = Object.getOwnPropertyDescriptor(window, 'A');
+                clearInterval(interval);
+                // A is the camera target object – we can't easily hook it without knowing
+                // the class. Instead, run a rAF loop that corrects after every frame.
+                (function camFrame() {
+                    if (window._3rbLockCameraPrimary && window._3rbMyPos && window._3rbMyPos.x !== 0) {
+                        if (window.A && typeof window.A.x === 'number') {
+                            window.A.x += (window._3rbMyPos.x - window.A.x) * 0.1;
+                            window.A.y += (window._3rbMyPos.y - window.A.y) * 0.1;
+                        }
+                    }
+                    requestAnimationFrame(camFrame);
+                })();
+                console.log('[MAD PLUS] ✓ Camera lock hook installed via rAF on window.A');
+                return;
+            }
+            if (tries++ > 150) {
+                clearInterval(interval);
+                // Last resort: rAF loop checking for any .x/.y object that looks like camera
+                (function camFrameFallback() {
+                    if (window._3rbLockCameraPrimary && window._3rbMyPos && window._3rbMyPos.x !== 0) {
+                        // Try common camera object names used by agar.io forks
+                        var cams = [window.camera, window.cam, window.A];
+                        for (var i = 0; i < cams.length; i++) {
+                            var c = cams[i];
+                            if (c && typeof c.x === 'number' && typeof c.y === 'number') {
+                                c.x += (window._3rbMyPos.x - c.x) * 0.1;
+                                c.y += (window._3rbMyPos.y - c.y) * 0.1;
+                                break;
+                            }
+                        }
+                    }
+                    requestAnimationFrame(camFrameFallback);
+                })();
+                console.log('[MAD PLUS] ⚠ Camera lock using fallback rAF search');
+            }
+        }, 200);
+    })();
+
+    // ── 4. Tab 2 Split Functions ─────────────────────────────────
     function splitTab2(times) {
         times = times || 1;
         var ws2 = window._3rbSlot2Sock;
-        if (ws2 && ws2.readyState === 1) {
-            var op = (ws2._3rbQe && ws2._3rbQe[17] != null) ? ws2._3rbQe[17] : 17;
-            for (var i = 0; i < times; i++) {
-                (function(delay) {
-                    setTimeout(function() {
-                        try { ws2._nativeSend(new Uint8Array([op]).buffer); } catch(e) {}
-                    }, delay);
-                })(i * 50);
-            }
+        if (!ws2 || ws2.readyState !== 1) return;
+        for (var i = 0; i < times; i++) {
+            (function(delay) {
+                setTimeout(function() {
+                    try { ws2._nativeSend(new Uint8Array([17]).buffer); } catch(e) {}
+                }, delay);
+            })(i * 60);
         }
     }
     window._3rbSplitTab2 = splitTab2;
