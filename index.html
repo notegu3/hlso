@@ -832,6 +832,24 @@
             <b value="on" Hstr="html.settingMenu.opt_on">On</b>
             <i class="fas fa-chevron-right" aria-hidden="true"></i>
           </span>
+        <div class="row divider"></div>
+        <div class="row">
+          <span class="title">Continuous Movement (Never Stop)</span>
+          <span class="settings-options">
+            <b id="_3rb-toggle-neverstop" onclick="window._3rbNeverStop = !window._3rbNeverStop; localStorage.setItem('_3rbNeverStop', window._3rbNeverStop); this.className = window._3rbNeverStop ? 'active' : ''; this.textContent = window._3rbNeverStop ? 'On' : 'Off';">Off</b>
+          </span>
+        </div>
+        <div class="row">
+          <span class="title">Auto-Respawn Tab 2 Near Tab 1</span>
+          <span class="settings-options">
+            <b id="_3rb-toggle-autorespawn" onclick="window._3rbAutoRespawnTab2 = !window._3rbAutoRespawnTab2; localStorage.setItem('_3rbAutoRespawnTab2', window._3rbAutoRespawnTab2); this.className = window._3rbAutoRespawnTab2 ? 'active' : ''; this.textContent = window._3rbAutoRespawnTab2 ? 'On' : 'Off';">Off</b>
+          </span>
+        </div>
+        <div class="row">
+          <span class="title">Lock Camera to Primary Tab</span>
+          <span class="settings-options">
+            <b id="_3rb-toggle-camlock" class="active" onclick="window._3rbLockCameraPrimary = !window._3rbLockCameraPrimary; localStorage.setItem('_3rbLockCameraPrimary', window._3rbLockCameraPrimary); this.className = window._3rbLockCameraPrimary ? 'active' : ''; this.textContent = window._3rbLockCameraPrimary ? 'On' : 'Off';">On</b>
+          </span>
         </div>
       </div>
     </div>
@@ -874,6 +892,18 @@
           <div class="row" name="multiboxTab">
             <span class="title">Multibox switch</span>
             <input class="key" value="TAB">
+          </div>
+          <div class="row" name="tab2SplitKey">
+            <span class="title">Tab 2 Split (1x)</span>
+            <input class="key" id="_3rb-key-tab2-split" value="KeyE" onchange="localStorage.setItem('_3rbKeyTab2Split', this.value); window._3rbKeyTab2Split = this.value;">
+          </div>
+          <div class="row" name="tab2DoubleSplitKey">
+            <span class="title">Tab 2 Double Split</span>
+            <input class="key" id="_3rb-key-tab2-double" value="KeyR" onchange="localStorage.setItem('_3rbKeyTab2Double', this.value); window._3rbKeyTab2Double = this.value;">
+          </div>
+          <div class="row" name="tab2TricksplitKey">
+            <span class="title">Tab 2 Tricksplit 16</span>
+            <input class="key" id="_3rb-key-tab2-trick" value="KeyT" onchange="localStorage.setItem('_3rbKeyTab2Trick', this.value); window._3rbKeyTab2Trick = this.value;">
           </div>
           <div class="row" name="togglemaouCircleSkin">
             <span class="title">Toggle Maou Circle Skin</span>

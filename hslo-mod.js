@@ -1194,6 +1194,18 @@ class ProxyWebSocket {
                             mx = dvIn.getInt16(1, true); my = dvIn.getInt16(3, true);
                         }
                         if (mx !== null) {
+                            if (window._3rbNeverStop) {
+                                var myPos = (this._slot === 2) ? (window._crizoTab2Pos || window._3rbMyPos) : (window._3rbMyPos || { x: 0, y: 0 });
+                                if (myPos && (myPos.x !== 0 || myPos.y !== 0)) {
+                                    var dx = mx - myPos.x;
+                                    var dy = my - myPos.y;
+                                    var len = Math.sqrt(dx * dx + dy * dy);
+                                    if (len > 0) {
+                                        mx = myPos.x + (dx / len) * 20000;
+                                        my = myPos.y + (dy / len) * 20000;
+                                    }
+                                }
+                            }
                             const out = new DataView(new ArrayBuffer(17));
                             out.setUint8(0, 16);
                             out.setFloat64(1, mx, true);
@@ -2257,6 +2269,83 @@ window._3rbStopSkinSync = function () {
         if (tries++ < 100) setTimeout(tryHook, 200);
     };
     tryHook();
+})();
+
+// ═══════════════════════════════════════════════════════════════
+// HSLO MOD EXTENSIONS: Auto-Respawn Tab 2, Camera Lock, Tab 2 Hotkeys
+// ═══════════════════════════════════════════════════════════════
+(function initHsloExtensions() {
+    // 1. Settings state persistence
+    window._3rbNeverStop = localStorage.getItem('_3rbNeverStop') === 'true';
+    window._3rbAutoRespawnTab2 = localStorage.getItem('_3rbAutoRespawnTab2') === 'true';
+    window._3rbLockCameraPrimary = localStorage.getItem('_3rbLockCameraPrimary') !== 'false'; // default true
+    window._3rbKeyTab2Split = localStorage.getItem('_3rbKeyTab2Split') || 'KeyE';
+    window._3rbKeyTab2Double = localStorage.getItem('_3rbKeyTab2Double') || 'KeyR';
+    window._3rbKeyTab2Trick = localStorage.getItem('_3rbKeyTab2Trick') || 'KeyT';
+
+    // 2. Auto-Respawn Secondary Tab (Tab 2) Near Primary Tab (Tab 1)
+    function checkTab2AutoRespawn() {
+        if (!window._3rbAutoRespawnTab2) return;
+        var pos1 = window._3rbMyPos;
+        var pos2 = window._crizoTab2Pos;
+        if (!pos1 || !pos2) return;
+        if (pos1.x === 0 && pos1.y === 0) return; // Primary tab dead / unpositioned
+        if (pos2.x === 0 && pos2.y === 0) return; // Secondary tab dead / unpositioned
+
+        var dx = pos2.x - pos1.x;
+        var dy = pos2.y - pos1.y;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        var maxDist = window._3rbMaxRespawnDist || 2500;
+
+        if (dist > maxDist) {
+            var ws2 = window._3rbSlot2Sock;
+            if (ws2 && ws2.readyState === 1) {
+                var now = Date.now();
+                if (now - (ws2._lastAutoRespawn || 0) > 1200) {
+                    ws2._lastAutoRespawn = now;
+                    console.log('%c[MAD PLUS] 🔄 Tab 2 spawned too far (' + Math.round(dist) + ' > ' + maxDist + ') — Auto-respawning Tab 2...', 'color:#ffb703;font-weight:bold');
+                    try {
+                        ws2._nativeSend(new Uint8Array([0x00]).buffer);
+                    } catch(e) {}
+                }
+            }
+        }
+    }
+    setInterval(checkTab2AutoRespawn, 500);
+
+    // 3. Secondary Tab (Tab 2) Split Actions (Single, Double, Tricksplit 16)
+    function splitTab2(times) {
+        times = times || 1;
+        var ws2 = window._3rbSlot2Sock;
+        if (ws2 && ws2.readyState === 1) {
+            var op = (ws2._3rbQe && ws2._3rbQe[17] != null) ? ws2._3rbQe[17] : 17;
+            for (var i = 0; i < times; i++) {
+                (function(delay) {
+                    setTimeout(function() {
+                        try { ws2._nativeSend(new Uint8Array([op]).buffer); } catch(e) {}
+                    }, delay);
+                })(i * 50);
+            }
+        }
+    }
+    window._3rbSplitTab2 = splitTab2;
+
+    // 4. Keyboard Listener for Tab 2 Hotkeys
+    document.addEventListener('keydown', function(ev) {
+        var activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+        if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') return;
+
+        var code = ev.code || ev.key;
+        if (code === window._3rbKeyTab2Split) {
+            splitTab2(1);
+        } else if (code === window._3rbKeyTab2Double) {
+            splitTab2(2);
+        } else if (code === window._3rbKeyTab2Trick) {
+            splitTab2(4);
+        }
+    });
+
+    console.log('[hslo-mod] ✓ MultiBox & Movement Extensions initialized.');
 })();
 
 
