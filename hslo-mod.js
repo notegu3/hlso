@@ -1191,6 +1191,7 @@ class ProxyWebSocket {
                     }
 
                     // V5 mouse (op 16) translation & NeverStop vector extension
+                    // NeverStop only applies to SLOT 2 (the inactive/secondary tab)
                     if (op === 16) {
                         if (u8.length !== 17) {
                             const dvIn = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
@@ -1201,8 +1202,8 @@ class ProxyWebSocket {
                                 mx = dvIn.getInt16(1, true); my = dvIn.getInt16(3, true);
                             }
                             if (mx !== null && my !== null) {
-                                if (window._3rbNeverStop) {
-                                    var myPos = (this._slot === 2) ? (window._crizoTab2Pos || window._3rbMyPos) : (window._3rbMyPos || { x: 0, y: 0 });
+                                if (window._3rbNeverStop && this._slot === 2) {
+                                    var myPos = window._crizoTab2Pos || window._3rbMyPos;
                                     if (myPos && (myPos.x !== 0 || myPos.y !== 0)) {
                                         var dx = mx - myPos.x;
                                         var dy = my - myPos.y;
@@ -1220,11 +1221,11 @@ class ProxyWebSocket {
                                 this._rawSendV5(out.buffer);
                                 return;
                             }
-                        } else if (window._3rbNeverStop) {
+                        } else if (window._3rbNeverStop && this._slot === 2) {
                             const dvIn = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
                             var mx = dvIn.getFloat64(1, true);
                             var my = dvIn.getFloat64(9, true);
-                            var myPos = (this._slot === 2) ? (window._crizoTab2Pos || window._3rbMyPos) : (window._3rbMyPos || { x: 0, y: 0 });
+                            var myPos = window._crizoTab2Pos || window._3rbMyPos;
                             if (myPos && (myPos.x !== 0 || myPos.y !== 0)) {
                                 var dx = mx - myPos.x;
                                 var dy = my - myPos.y;
@@ -2315,21 +2316,26 @@ window._3rbStopSkinSync = function () {
     window._3rbMaxRespawnDist   = Number(localStorage.getItem('_3rbMaxRespawnDist') || 2500);
 
     // ── 2. Auto-Respawn Tab 2 near Tab 1 ───────────────────────
-    // Strategy: send op=17 (split) 16 times rapidly → cell becomes tiny → dies instantly → auto-respawn
+    // Uses eject mass (op 21) rapidly to shrink the cell until it dies
     function killTab2() {
-        var proxy2 = window._3rbProxySlot2;
-        if (!proxy2) return;
         var ws2 = window._3rbSlot2Sock;
         if (!ws2 || ws2.readyState !== 1) return;
-        // Send 16 splits quickly to force death
-        for (var i = 0; i < 16; i++) {
+        // Mark as killed so position tracking resets
+        ws2._3rbTab2Killed = Date.now();
+        // Eject mass 20 times rapidly (shrinks cell, eventually it dies or gets eaten)
+        for (var i = 0; i < 20; i++) {
             (function(d) {
                 setTimeout(function() {
-                    try { ws2._nativeSend(new Uint8Array([17]).buffer); } catch(e) {}
+                    try { ws2._nativeSend(new Uint8Array([21]).buffer); } catch(e) {}
                 }, d);
-            })(i * 30);
+            })(i * 50);
         }
     }
+
+    // Track Tab 2 position stability: only check respawn after position has been
+    // stable for 4+ seconds (avoids triggering immediately on fresh spawn)
+    var _tab2PosStableAt = 0;
+    var _tab2LastCheckedPos = null;
 
     function checkTab2AutoRespawn() {
         if (!window._3rbAutoRespawnTab2) return;
@@ -2339,95 +2345,92 @@ window._3rbStopSkinSync = function () {
         if (pos1.x === 0 && pos1.y === 0) return;
         if (pos2.x === 0 && pos2.y === 0) return;
 
+        var ws2 = window._3rbSlot2Sock;
+        if (!ws2 || ws2.readyState !== 1) return;
+
+        // If Tab 2 was just killed, skip checks for 5 seconds
+        if (ws2._3rbTab2Killed && Date.now() - ws2._3rbTab2Killed < 5000) return;
+
+        // Track position stability: if position changed since last check, reset timer
+        var now = Date.now();
+        var posKey = Math.round(pos2.x / 100) + ',' + Math.round(pos2.y / 100);
+        if (!_tab2LastCheckedPos || _tab2LastCheckedPos !== posKey) {
+            _tab2LastCheckedPos = posKey;
+            _tab2PosStableAt = now;
+            return; // Position changed, wait for stability
+        }
+        // Only act if position has been stable for 4+ seconds
+        if (now - _tab2PosStableAt < 4000) return;
+
         var dx = pos2.x - pos1.x;
         var dy = pos2.y - pos1.y;
         var dist = Math.sqrt(dx * dx + dy * dy);
         var maxDist = window._3rbMaxRespawnDist || 2500;
 
         if (dist > maxDist) {
-            var ws2 = window._3rbSlot2Sock;
-            if (ws2 && ws2.readyState === 1) {
-                var now = Date.now();
-                if (now - (ws2._lastAutoRespawn || 0) > 3000) {
-                    ws2._lastAutoRespawn = now;
-                    console.log('%c[MAD PLUS] 🔄 Tab 2 too far (' + Math.round(dist) + ') — killing & respawning...', 'color:#ffb703;font-weight:bold');
-                    killTab2();
-                }
+            if (now - (ws2._lastAutoRespawn || 0) > 6000) {
+                ws2._lastAutoRespawn = now;
+                console.log('%c[MAD PLUS] 🔄 Tab 2 stable but far (' + Math.round(dist) + ' > ' + maxDist + ') — killing...', 'color:#ffb703;font-weight:bold');
+                // Reset position tracking
+                _tab2LastCheckedPos = null;
+                _tab2PosStableAt = 0;
+                window._crizoTab2Pos = null;
+                killTab2();
             }
         }
     }
     setInterval(checkTab2AutoRespawn, 1000);
 
     // ── 3. Camera Lock on Primary Tab ───────────────────────────
-    // Hook bundle.js camera object A.x / A.y to be overridden when lock is active
+    // Hook into bundle.js camera move() to bias toward Tab 1 position when lock is ON
     (function hookCamera() {
         var tries = 0;
         var interval = setInterval(function() {
-            // Bundle exposes the camera object as a class with .x .y .isAlive
-            // We look for it via window.se (the main game engine exposed by bundle.js)
-            if (window.se && window.se.camera) {
-                var origMove = window.se.camera.move;
-                if (typeof origMove === 'function') {
-                    window.se.camera.move = function() {
-                        origMove.call(this);
-                        if (window._3rbLockCameraPrimary && window._3rbMyPos && window._3rbMyPos.x !== 0) {
-                            // After camera moves toward A (which may be average of both tabs),
-                            // snap camera toward Tab 1 position only
-                            this.x += (window._3rbMyPos.x - this.x) * 0.15;
-                            this.y += (window._3rbMyPos.y - this.y) * 0.15;
-                        }
-                    };
-                    console.log('[MAD PLUS] ✓ Camera lock hook installed via window.se.camera');
-                    clearInterval(interval);
-                    return;
-                }
-            }
-            // Fallback: try bundle's internal A object (camera target)
-            if (window.A && typeof window.A.x === 'number') {
-                var _origAx = Object.getOwnPropertyDescriptor(window, 'A');
-                clearInterval(interval);
-                // A is the camera target object – we can't easily hook it without knowing
-                // the class. Instead, run a rAF loop that corrects after every frame.
-                (function camFrame() {
+            // Try to find the camera instance via window.se
+            if (window.se && window.se.camera && typeof window.se.camera.move === 'function') {
+                var cam = window.se.camera;
+                var origMove = cam.move.bind(cam);
+                cam.move = function() {
+                    origMove();
                     if (window._3rbLockCameraPrimary && window._3rbMyPos && window._3rbMyPos.x !== 0) {
-                        if (window.A && typeof window.A.x === 'number') {
-                            window.A.x += (window._3rbMyPos.x - window.A.x) * 0.1;
-                            window.A.y += (window._3rbMyPos.y - window.A.y) * 0.1;
-                        }
+                        this.x += (window._3rbMyPos.x - this.x) * 0.2;
+                        this.y += (window._3rbMyPos.y - this.y) * 0.2;
                     }
-                    requestAnimationFrame(camFrame);
-                })();
-                console.log('[MAD PLUS] ✓ Camera lock hook installed via rAF on window.A');
+                };
+                console.log('[MAD PLUS] ✓ Camera lock hooked via window.se.camera');
+                clearInterval(interval);
                 return;
             }
-            if (tries++ > 150) {
+            if (tries++ > 200) {
                 clearInterval(interval);
-                // Last resort: rAF loop checking for any .x/.y object that looks like camera
-                (function camFrameFallback() {
-                    if (window._3rbLockCameraPrimary && window._3rbMyPos && window._3rbMyPos.x !== 0) {
-                        // Try common camera object names used by agar.io forks
-                        var cams = [window.camera, window.cam, window.A];
-                        for (var i = 0; i < cams.length; i++) {
-                            var c = cams[i];
-                            if (c && typeof c.x === 'number' && typeof c.y === 'number') {
-                                c.x += (window._3rbMyPos.x - c.x) * 0.1;
-                                c.y += (window._3rbMyPos.y - c.y) * 0.1;
-                                break;
-                            }
-                        }
-                    }
-                    requestAnimationFrame(camFrameFallback);
-                })();
-                console.log('[MAD PLUS] ⚠ Camera lock using fallback rAF search');
+                console.log('[MAD PLUS] ℹ Camera lock: window.se.camera not found — skipping hook');
             }
-        }, 200);
+        }, 100);
     })();
 
     // ── 4. Tab 2 Split Functions ─────────────────────────────────
+    // Normalize a stored key to match ev.code format
+    function keyMatches(storedKey, ev) {
+        var code = ev.code || '';
+        var key  = ev.key  || '';
+        var s = (storedKey || '').trim();
+        // Exact match (e.g. 'KeyZ')
+        if (code === s) return true;
+        // Single letter stored as 'Z', code is 'KeyZ'
+        if (code === 'Key' + s.toUpperCase()) return true;
+        // Match by ev.key
+        if (key.toUpperCase() === s.toUpperCase()) return true;
+        return false;
+    }
+
     function splitTab2(times) {
         times = times || 1;
         var ws2 = window._3rbSlot2Sock;
-        if (!ws2 || ws2.readyState !== 1) return;
+        if (!ws2 || ws2.readyState !== 1) {
+            console.warn('[MAD PLUS] splitTab2: no Tab 2 socket open');
+            return;
+        }
+        console.log('[MAD PLUS] splitTab2 x' + times);
         for (var i = 0; i < times; i++) {
             (function(delay) {
                 setTimeout(function() {
@@ -2438,22 +2441,24 @@ window._3rbStopSkinSync = function () {
     }
     window._3rbSplitTab2 = splitTab2;
 
-    // 4. Keyboard Listener for Tab 2 Hotkeys
+    // ── 5. Keyboard Listener for Tab 2 Hotkeys ──────────────────
     document.addEventListener('keydown', function(ev) {
-        var activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
-        if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') return;
+        var tag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+        if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
 
-        var code = ev.code || ev.key;
-        if (code === window._3rbKeyTab2Split) {
+        if (keyMatches(window._3rbKeyTab2Split, ev)) {
+            ev.stopPropagation();
             splitTab2(1);
-        } else if (code === window._3rbKeyTab2Double) {
+        } else if (keyMatches(window._3rbKeyTab2Double, ev)) {
+            ev.stopPropagation();
             splitTab2(2);
-        } else if (code === window._3rbKeyTab2Trick) {
+        } else if (keyMatches(window._3rbKeyTab2Trick, ev)) {
+            ev.stopPropagation();
             splitTab2(4);
         }
-    });
+    }, true); // capture=true fires before HSLO's own keydown listeners
 
-    console.log('[hslo-mod] ✓ MultiBox & Movement Extensions initialized.');
+    console.log('[hslo-mod] ✓ MultiBox & Movement Extensions initialized. Keys:', window._3rbKeyTab2Split, window._3rbKeyTab2Double, window._3rbKeyTab2Trick);
 })();
 
 
