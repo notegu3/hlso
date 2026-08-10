@@ -1941,8 +1941,8 @@ const onyxv4_s5_0x1ad2eb = (()=>{
                 e || (e = {
                     nick: "profile " + this.selected,
                     nick2: "profile " + this.selected,
-                    skin: "https://i.imgur.com/kbfjWV1.png",
-                    skin2: "https://i.imgur.com/kbfjWV1.png"
+                    skin: "",
+                    skin2: ""
                 }),
                 c.set("profiles", "profile" + this.selected, e),
                 r("#nick").val(e.nick),
@@ -2001,8 +2001,8 @@ const onyxv4_s5_0x1ad2eb = (()=>{
                 t || (t = {
                     nick: "profile " + this.selected,
                     nick2: "profile " + this.selected,
-                    skin: "https://i.imgur.com/kbfjWV1.png",
-                    skin2: "https://i.imgur.com/kbfjWV1.png"
+                    skin: "",
+                    skin2: ""
                 }),
                 r("#nick").val(t.nick),
                 r("#nick2").val(t.nick2),
@@ -2026,8 +2026,8 @@ const onyxv4_s5_0x1ad2eb = (()=>{
                 t || (t = {
                     nick: "profile " + this.selected,
                     nick2: "profile " + this.selected,
-                    skin: "https://i.imgur.com/kbfjWV1.png",
-                    skin2: "https://i.imgur.com/kbfjWV1.png"
+                    skin: "",
+                    skin2: ""
                 }),
                 t.nick = e,
                 c.set("profiles", "profile" + this.selected, t),
@@ -2041,8 +2041,8 @@ const onyxv4_s5_0x1ad2eb = (()=>{
                 t || (t = {
                     nick: "profile " + this.selected,
                     nick2: "profile " + this.selected,
-                    skin: "https://i.imgur.com/kbfjWV1.png",
-                    skin2: "https://i.imgur.com/kbfjWV1.png"
+                    skin: "",
+                    skin2: ""
                 }),
                 t.nick2 = e,
                 c.set("profiles", "profile" + this.selected, t),
@@ -2056,8 +2056,8 @@ const onyxv4_s5_0x1ad2eb = (()=>{
                 t || (t = {
                     nick: "profile " + this.selected,
                     nick2: "profile " + this.selected,
-                    skin: "https://i.imgur.com/kbfjWV1.png",
-                    skin2: "https://i.imgur.com/kbfjWV1.png"
+                    skin: "",
+                    skin2: ""
                 }),
                 t.skin = re.code2Url(re.getImgurCode(e)),
                 c.set("profiles", "profile" + this.selected, t),
@@ -2073,8 +2073,8 @@ const onyxv4_s5_0x1ad2eb = (()=>{
                 t || (t = {
                     nick: "profile " + this.selected,
                     nick2: "profile " + this.selected,
-                    skin: "https://i.imgur.com/kbfjWV1.png",
-                    skin2: "https://i.imgur.com/kbfjWV1.png"
+                    skin: "",
+                    skin2: ""
                 }),
                 t.skin2 = re.code2Url(re.getImgurCode(e)),
                 c.set("profiles", "profile" + this.selected, t),
@@ -6700,10 +6700,10 @@ const onyxv4_s5_0x1ad2eb = (()=>{
                 A.isAlive && (this.skinMap.set(A.worldID, k.hideOwnSkin === "on" ? "" : this.code2url(A.skin)),
                 this.skinMap.set(A.worldID2, k.hideOwnSkin === "on" ? "" : this.code2url(A.skin2)));
                 for (const e of se.teammates.values())
-					e.isAlive && e.worldID !== A.worldID && e.worldID !== A.worldID2 && this.skinMap.set(e.worldID, e.skin ? (e.skin.includes("imgur") ? e.skin : this.code2url(e.skin)) : "https://i.imgur.com/O5k0G4p.png");
+					e.isAlive && e.worldID !== A.worldID && e.worldID !== A.worldID2 && this.skinMap.set(e.worldID, e.skin ? (e.skin.includes("imgur") ? e.skin : this.code2url(e.skin)) : "");
 				for (const e of ses.teammates.values())
-					e.isAlive && e.worldID !== A.worldID && e.worldID !== A.worldID2 && this.skinMap.set(e.worldID, e.skin ? (e.skin.includes("imgur") ? e.skin : this.code2url(e.skin)) : "https://i.imgur.com/O5k0G4p.png"),
-					e.isAlive2 && e.worldID2 !== A.worldID && e.worldID2 !== A.worldID2 && this.skinMap.set(e.worldID2, e.skin2 ? (e.skin2.includes("imgur") ? e.skin2 : this.code2url(e.skin2)) : "https://i.imgur.com/O5k0G4p.png");
+					e.isAlive && e.worldID !== A.worldID && e.worldID !== A.worldID2 && this.skinMap.set(e.worldID, e.skin ? (e.skin.includes("imgur") ? e.skin : this.code2url(e.skin)) : ""),
+					e.isAlive2 && e.worldID2 !== A.worldID && e.worldID2 !== A.worldID2 && this.skinMap.set(e.worldID2, e.skin2 ? (e.skin2.includes("imgur") ? e.skin2 : this.code2url(e.skin2)) : "");
 				// 3rb.io: every player (incl. enemies) carries a skin string in op16 (flag&4),
 				// stored on the cell as `.skin`. skinMap above only covered self + teammates, so
 				// enemy 3rb.io skins never rendered. Map every visible non-virus/ejected cell's

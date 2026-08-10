@@ -2311,6 +2311,19 @@ window._3rbStopSkinSync = function () {
     // their server-assigned skin (from 3rb.io's res/skins CDN) or just colour.
     var PLACEHOLDER = 'https://i.imgur.com/kbfjWV1.png';
 
+    // Purge saved placeholder skin from localStorage profiles
+    try {
+        var profs = JSON.parse(localStorage.getItem('profiles') || '{}');
+        var changed = false;
+        Object.keys(profs).forEach(function(k) {
+            if (profs[k]) {
+                if (profs[k].skin === PLACEHOLDER) { profs[k].skin = ''; changed = true; }
+                if (profs[k].skin2 === PLACEHOLDER) { profs[k].skin2 = ''; changed = true; }
+            }
+        });
+        if (changed) localStorage.setItem('profiles', JSON.stringify(profs));
+    } catch(e) {}
+
     // ── 1. Clear own-cell default skin ──────────────────────────
     // Patches window.classb (the profile manager) so new / empty profiles
     // start with an empty skin instead of the placeholder.
