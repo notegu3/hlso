@@ -1618,6 +1618,7 @@ const onyxv4_s5_0x1ad2eb = (()=>{
                 this.maouCircleSkin = c.get("settings", "maouCircleSkin") || "off",
                 this.maouCircleSkinGlow = c.get("settings", "maouCircleSkinGlow") || "off",
                 this.maouCircleSkinRange = c.get("settings", "maouCircleSkinRange") || "myself",
+                this.keepLastDirection = c.get("settings", "keepLastDirection") || "on",
                 this.commander = c.get("settings", "commander") || "on",
                 this.eatEffects = c.get("settings", "eatEffects") || "off",
                 this.sounds = c.get("settings", "sounds") || "on",
@@ -2313,8 +2314,7 @@ const onyxv4_s5_0x1ad2eb = (()=>{
                 } else {
                     Q.mouse(0 | this.canvasX, 0 | this.canvasY);
                 }
-                const keepEnabled = (window._3rbKeepLastDirection === true) || (window._3rbKeepLastDirection !== false && localStorage.getItem('_3rbKeepLastDirection') !== 'false');
-                if (keepEnabled) {
+                if ("off" !== k.keepLastDirection) {
                     if (1 === A.controllingTab && A.isAliveTab2 && window._3rbLastDir2) {
                         const targetX = (A.x2 || 0) + window._3rbLastDir2.nx * 20000;
                         const targetY = (A.y2 || 0) + window._3rbLastDir2.ny * 20000;
