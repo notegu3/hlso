@@ -638,6 +638,7 @@ class ProxyWebSocket {
                 // 1. Send version handshake immediately (like original 3rb client)
                 self.ws._nativeSend(new Uint8Array([255, 0, 0]).buffer);
                 self.ws._3rbHandshakeSent = true;
+                self.ws._3rbCaptchaSent = true;
                 log(self._socketLabel, '✓ Handshake [255,0,0] sent');
 
                 // 2. Start ping loop [0x64] every 1s — but ONLY after the captcha token is
@@ -2531,16 +2532,29 @@ window._3rbStopSkinSync = function () {
         if (window.classq && typeof window.classq.reconnect === 'function') {
             try {
                 window.classq.reconnect(otherSlot);
-                return;
             } catch(e) {
                 console.warn('[MAD PLUS] classq.reconnect error:', e);
             }
+        } else {
+            var ws = (otherSlot === 2) ? window._3rbSlot2Sock : window._3rbSlot1Sock;
+            if (ws && ws.readyState === 1) {
+                try { ws.close(); } catch(e) {}
+            }
         }
 
-        var ws = (otherSlot === 2) ? window._3rbSlot2Sock : window._3rbSlot1Sock;
-        if (ws && ws.readyState === 1) {
-            try { ws.close(); } catch(e) {}
-        }
+        // Auto-trigger spawn for the target tab slot as soon as the new socket connects
+        var checks = 0;
+        var t = setInterval(function() {
+            var sock = (otherSlot === 2) ? window._3rbSlot2Sock : window._3rbSlot1Sock;
+            if (sock && sock.readyState === 1) {
+                clearInterval(t);
+                if (window.classQ) {
+                    window.classQ.myTurn = true;
+                    try { window.classQ.spawn(otherSlot); } catch(e) {}
+                }
+            }
+            if (checks++ > 30) clearInterval(t);
+        }, 100);
     }
 
     // Keep old name as alias for any external code that might call it
