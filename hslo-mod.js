@@ -2306,8 +2306,9 @@ window._3rbStopSkinSync = function () {
         if (changed) localStorage.setItem('profiles', JSON.stringify(profs));
 
         var st = JSON.parse(localStorage.getItem('settings') || '{}');
-        if (st.everyoneSkins !== 'off') {
+        if (st.everyoneSkins !== 'off' || st.autoZoom !== 'off') {
             st.everyoneSkins = 'off';
+            st.autoZoom = 'off';
             localStorage.setItem('settings', JSON.stringify(st));
         }
     } catch(e) {}
