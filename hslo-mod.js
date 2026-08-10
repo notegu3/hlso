@@ -2446,16 +2446,39 @@ window._3rbStopSkinSync = function () {
 
     function splitTab2(times) {
         times = times || 1;
-        var ws2 = window._3rbSlot2Sock;
+        var ws2    = window._3rbSlot2Sock;
+        var proxy2 = window._3rbProxySlot2;
+
+        // Must have an open, authenticated Tab 2 socket
         if (!ws2 || ws2.readyState !== 1) {
             console.warn('[MAD PLUS] splitTab2: no Tab 2 socket open');
             return;
         }
+        if (!ws2._3rbCaptchaSent) {
+            console.warn('[MAD PLUS] splitTab2: Tab 2 not authenticated yet — split blocked');
+            return;
+        }
+
         console.log('[MAD PLUS] splitTab2 x' + times);
+
         for (var i = 0; i < times; i++) {
             (function(delay) {
                 setTimeout(function() {
-                    try { ws2._nativeSend(new Uint8Array([17]).buffer); } catch(e) {}
+                    try {
+                        // IMPORTANT: 3rb.io uses a SIG opcode shuffle table (_3rbQe).
+                        // Sending raw opcode 17 without the shuffle is silently ignored
+                        // by the server.  _rawSendV5() applies the shuffle automatically.
+                        if (proxy2 && typeof proxy2._rawSendV5 === 'function') {
+                            proxy2._rawSendV5(new Uint8Array([17]).buffer);
+                        } else if (ws2._3rbQe) {
+                            // Fallback: manually shuffle the opcode
+                            var shuffled = new Uint8Array([ws2._3rbQe[17]]);
+                            ws2._nativeSend(shuffled.buffer);
+                        } else {
+                            // No SIG map yet — send raw (rare edge case)
+                            ws2._nativeSend(new Uint8Array([17]).buffer);
+                        }
+                    } catch(e) { console.warn('[MAD PLUS] splitTab2 send error:', e); }
                 }, delay);
             })(i * 60);
         }
