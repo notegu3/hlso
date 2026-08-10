@@ -838,8 +838,8 @@
           <span class="title">Continuous Background Direction (Never Stop)</span>
           <span class="settings-options" type="options" name="keepLastDirection">
             <i class="fas fa-chevron-left" aria-hidden="true"></i>
-            <b value="off" Hstr="html.settingMenu.opt_off">Off</b>
-            <b value="on" class="active" Hstr="html.settingMenu.opt_on">On</b>
+            <b value="off" onclick="if(window.k)window.k.keepLastDirection='off'; if(window.c)window.c.set('settings','keepLastDirection','off'); document.querySelectorAll('#settings [name=keepLastDirection] b').forEach(function(b){b.className='';}); this.className='active';">Off</b>
+            <b value="on" class="active" onclick="if(window.k)window.k.keepLastDirection='on'; if(window.c)window.c.set('settings','keepLastDirection','on'); document.querySelectorAll('#settings [name=keepLastDirection] b').forEach(function(b){b.className='';}); this.className='active';">On</b>
             <i class="fas fa-chevron-right" aria-hidden="true"></i>
           </span>
         </div>
