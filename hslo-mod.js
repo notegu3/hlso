@@ -2427,6 +2427,8 @@ window._3rbStopSkinSync = function () {
     // Keep _3rbKeyTab2Trick as an alias so any code still reading the old name continues to work.
     window._3rbKeyTab2Trick     = window._3rbKeyTab2Split16;
     window._3rbKeyTab2Respawn   = localStorage.getItem('_3rbKeyTab2Respawn')   || 'V';
+    window._3rbKeySingleCam     = localStorage.getItem('_3rbKeySingleCam')     || 'J';
+    window._3rbFocusSingleCam   = localStorage.getItem('_3rbFocusSingleCam')   === 'true';
 
     // Restore saved key values into the hotkey input boxes once the DOM is ready
     (function restoreTab2Keys() {
@@ -2436,16 +2438,40 @@ window._3rbStopSkinSync = function () {
             var d   = document.getElementById('_3rb-key-tab2-double');
             var s16 = document.getElementById('_3rb-key-tab2-split16');
             var rsp = document.getElementById('_3rb-key-tab2-respawn');
+            var scm = document.getElementById('_3rb-key-singlecam');
+
+            // Restore UI button state for Focus Single Tab Camera
+            var btnOff = document.getElementById('_3rb-toggle-singlecam-off');
+            var btnOn  = document.getElementById('_3rb-toggle-singlecam-on');
+            if (btnOff && btnOn) {
+                btnOff.className = window._3rbFocusSingleCam ? '' : 'active';
+                btnOn.className  = window._3rbFocusSingleCam ? 'active' : '';
+            }
+
             if (s && d && s16) {
                 clearInterval(t);
                 s.value   = window._3rbKeyTab2Split;
                 d.value   = window._3rbKeyTab2Double;
                 s16.value = window._3rbKeyTab2Split16;
                 if (rsp) rsp.value = window._3rbKeyTab2Respawn;
+                if (scm) scm.value = window._3rbKeySingleCam;
             }
             if (tries++ > 100) clearInterval(t);
         }, 200);
     })();
+
+    // Helper: update single camera UI toggle state
+    function updateSingleCamUI() {
+        localStorage.setItem('_3rbFocusSingleCam', window._3rbFocusSingleCam ? 'true' : 'false');
+        var btnOff = document.getElementById('_3rb-toggle-singlecam-off');
+        var btnOn  = document.getElementById('_3rb-toggle-singlecam-on');
+        if (btnOff && btnOn) {
+            btnOff.className = window._3rbFocusSingleCam ? '' : 'active';
+            btnOn.className  = window._3rbFocusSingleCam ? 'active' : '';
+        }
+    }
+
+    // ── 4. Tab 2 Split Functions ─────────────────────────────────
 
     // ── 4. Tab 2 Split Functions ─────────────────────────────────
     // Normalize a stored key to match ev.code format
@@ -2567,10 +2593,11 @@ window._3rbStopSkinSync = function () {
         var tag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
         if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
 
-        var splitKey   = readTab2Key('_3rb-key-tab2-split',   '_3rbKeyTab2Split',   '_3rbKeyTab2Split',   'Z');
-        var doubleKey  = readTab2Key('_3rb-key-tab2-double',  '_3rbKeyTab2Double',  '_3rbKeyTab2Double',  'X');
-        var split16Key = readTab2Key('_3rb-key-tab2-split16', '_3rbKeyTab2Split16', '_3rbKeyTab2Split16', 'C');
-        var respawnKey = readTab2Key('_3rb-key-tab2-respawn', '_3rbKeyTab2Respawn', '_3rbKeyTab2Respawn', 'V');
+        var splitKey     = readTab2Key('_3rb-key-tab2-split',   '_3rbKeyTab2Split',   '_3rbKeyTab2Split',   'Z');
+        var doubleKey    = readTab2Key('_3rb-key-tab2-double',  '_3rbKeyTab2Double',  '_3rbKeyTab2Double',  'X');
+        var split16Key   = readTab2Key('_3rb-key-tab2-split16', '_3rbKeyTab2Split16', '_3rbKeyTab2Split16', 'C');
+        var respawnKey   = readTab2Key('_3rb-key-tab2-respawn', '_3rbKeyTab2Respawn', '_3rbKeyTab2Respawn', 'V');
+        var singleCamKey = readTab2Key('_3rb-key-singlecam',    '_3rbKeySingleCam',   '_3rbKeySingleCam',   'J');
 
         if (keyMatches(splitKey, ev)) {
             ev.stopImmediatePropagation();
@@ -2588,6 +2615,12 @@ window._3rbStopSkinSync = function () {
             ev.stopImmediatePropagation();
             ev.preventDefault();
             fastRespawnOtherTab(); // Fast Respawn / Kill
+        } else if (keyMatches(singleCamKey, ev)) {
+            ev.stopImmediatePropagation();
+            ev.preventDefault();
+            window._3rbFocusSingleCam = !window._3rbFocusSingleCam;
+            updateSingleCamUI();
+            console.log('[MAD PLUS] 📷 Toggle Focus Single Tab Camera:', window._3rbFocusSingleCam ? 'ON' : 'OFF');
         }
     }, true); // capture=true fires before HSLO's own keydown listeners
 
