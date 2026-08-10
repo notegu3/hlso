@@ -2444,56 +2444,78 @@ window._3rbStopSkinSync = function () {
         return false;
     }
 
-    function splitTab2(times) {
+    // ── 4. Track which tab is currently being controlled ────────
+    // Starts at 1 (Tab 1 controlled). Toggles every time the multibox switch key fires.
+    window._3rbControlledTab = 1;
+
+    // Helper: read the multibox-switch key live from the HSLO hotkey input
+    function getMultiboxSwitchKey() {
+        var el = document.querySelector('[name="multiboxTab"] input.key');
+        return el ? el.value.trim() : 'Tab';
+    }
+
+    // Listen for the multibox switch key in BUBBLE phase so HSLO handles the actual
+    // tab switch first; we just count the toggle.
+    document.addEventListener('keydown', function(ev) {
+        var tag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+        if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+        var mbKey = getMultiboxSwitchKey();
+        if (keyMatches(mbKey, ev)) {
+            window._3rbControlledTab = (window._3rbControlledTab === 1) ? 2 : 1;
+            console.log('[MAD PLUS] Switched control \u2192 Tab', window._3rbControlledTab);
+        }
+    }, false); // bubble phase — HSLO processes first, then we toggle
+
+    // ── 5. Split the OTHER (background) tab ─────────────────────
+    // Always sends the split command to whichever tab is NOT being controlled.
+    function splitOtherTab(times) {
         times = times || 1;
-        var ws2    = window._3rbSlot2Sock;
-        var proxy2 = window._3rbProxySlot2;
 
-        // Must have an open, authenticated Tab 2 socket
-        if (!ws2 || ws2.readyState !== 1) {
-            console.warn('[MAD PLUS] splitTab2: no Tab 2 socket open');
+        // Decide which slot to split: the one NOT currently controlled
+        var otherSlot = (window._3rbControlledTab === 1) ? 2 : 1;
+        var ws    = (otherSlot === 2) ? window._3rbSlot2Sock  : window._3rbSlot1Sock;
+        var proxy = (otherSlot === 2) ? window._3rbProxySlot2 : window._3rbProxySlot1;
+
+        if (!ws || ws.readyState !== 1) {
+            console.warn('[MAD PLUS] splitOtherTab: slot', otherSlot, 'socket not open');
             return;
         }
-        if (!ws2._3rbCaptchaSent) {
-            console.warn('[MAD PLUS] splitTab2: Tab 2 not authenticated yet — split blocked');
+        if (!ws._3rbCaptchaSent) {
+            console.warn('[MAD PLUS] splitOtherTab: slot', otherSlot, 'not authenticated yet');
             return;
         }
 
-        console.log('[MAD PLUS] splitTab2 x' + times);
+        console.log('[MAD PLUS] splitOtherTab x' + times, '(controlled=Tab' + window._3rbControlledTab + ' \u2192 splitting Tab' + otherSlot + ')');
 
         for (var i = 0; i < times; i++) {
             (function(delay) {
                 setTimeout(function() {
                     try {
-                        // IMPORTANT: 3rb.io uses a SIG opcode shuffle table (_3rbQe).
-                        // Sending raw opcode 17 without the shuffle is silently ignored
-                        // by the server.  _rawSendV5() applies the shuffle automatically.
-                        if (proxy2 && typeof proxy2._rawSendV5 === 'function') {
-                            proxy2._rawSendV5(new Uint8Array([17]).buffer);
-                        } else if (ws2._3rbQe) {
-                            // Fallback: manually shuffle the opcode
-                            var shuffled = new Uint8Array([ws2._3rbQe[17]]);
-                            ws2._nativeSend(shuffled.buffer);
+                        // IMPORTANT: 3rb.io uses a SIG opcode-shuffle table (_3rbQe).
+                        // _rawSendV5() applies the shuffle automatically.
+                        if (proxy && typeof proxy._rawSendV5 === 'function') {
+                            proxy._rawSendV5(new Uint8Array([17]).buffer);
+                        } else if (ws._3rbQe) {
+                            ws._nativeSend(new Uint8Array([ws._3rbQe[17]]).buffer);
                         } else {
-                            // No SIG map yet — send raw (rare edge case)
-                            ws2._nativeSend(new Uint8Array([17]).buffer);
+                            ws._nativeSend(new Uint8Array([17]).buffer);
                         }
-                    } catch(e) { console.warn('[MAD PLUS] splitTab2 send error:', e); }
+                    } catch(e) { console.warn('[MAD PLUS] splitOtherTab send error:', e); }
                 }, delay);
             })(i * 60);
         }
     }
-    window._3rbSplitTab2 = splitTab2;
+    // Keep old name as alias for any external code that might call it
+    window._3rbSplitTab2    = splitOtherTab;
+    window._3rbSplitOtherTab = splitOtherTab;
 
-    // ── 5. Keyboard Listener for Tab 2 Hotkeys ──────────────────
-    // Read live key from DOM input so settings changes take effect without reload.
-    // HSLO sets .value programmatically (not via user typing), so 'onchange' never
-    // fires. Reading the element at event-time is the only reliable approach.
+    // ── 6. Keyboard Listener for the split hotkeys ───────────────
+    // Read key value live from the DOM input (HSLO sets .value programmatically so
+    // 'onchange' never fires — reading at event-time is the only reliable approach).
     function readTab2Key(elId, windowVar, storageKey, fallback) {
         var el = document.getElementById(elId);
         var v  = el ? el.value.trim() : '';
         if (v) {
-            // Keep global var and localStorage in sync whenever value differs
             if (window[windowVar] !== v) {
                 window[windowVar] = v;
                 localStorage.setItem(storageKey, v);
@@ -2507,29 +2529,26 @@ window._3rbStopSkinSync = function () {
         var tag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
         if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
 
-        // Read live from DOM so settings changes are picked up immediately
         var splitKey   = readTab2Key('_3rb-key-tab2-split',   '_3rbKeyTab2Split',   '_3rbKeyTab2Split',   'Z');
         var doubleKey  = readTab2Key('_3rb-key-tab2-double',  '_3rbKeyTab2Double',  '_3rbKeyTab2Double',  'X');
         var split16Key = readTab2Key('_3rb-key-tab2-split16', '_3rbKeyTab2Split16', '_3rbKeyTab2Split16', 'C');
 
         if (keyMatches(splitKey, ev)) {
-            // stopImmediatePropagation blocks ALL other listeners on this element
-            // (including HSLO capture listeners) — prevents the wrong tab splitting.
             ev.stopImmediatePropagation();
             ev.preventDefault();
-            splitTab2(1); // Split (1x)
+            splitOtherTab(1); // Split — splits the background tab
         } else if (keyMatches(doubleKey, ev)) {
             ev.stopImmediatePropagation();
             ev.preventDefault();
-            splitTab2(2); // Double Split (2x)
+            splitOtherTab(2); // Double Split
         } else if (keyMatches(split16Key, ev)) {
             ev.stopImmediatePropagation();
             ev.preventDefault();
-            splitTab2(4); // Split 16 (4 splits = 16 pieces)
+            splitOtherTab(4); // Split 16
         }
     }, true); // capture=true fires before HSLO's own keydown listeners
 
-    console.log('[hslo-mod] ✓ MultiBox & Movement Extensions initialized. Tab2 Keys → Split:', window._3rbKeyTab2Split, '| Double Split:', window._3rbKeyTab2Double, '| Split 16:', window._3rbKeyTab2Split16);
+    console.log('[hslo-mod] ✓ splitOtherTab ready. Tab2 Keys \u2192 Split:', window._3rbKeyTab2Split, '| Double:', window._3rbKeyTab2Double, '| Split16:', window._3rbKeyTab2Split16);
 })();
 
 
