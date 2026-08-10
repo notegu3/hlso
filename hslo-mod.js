@@ -2486,19 +2486,46 @@ window._3rbStopSkinSync = function () {
     window._3rbSplitTab2 = splitTab2;
 
     // ── 5. Keyboard Listener for Tab 2 Hotkeys ──────────────────
+    // Read live key from DOM input so settings changes take effect without reload.
+    // HSLO sets .value programmatically (not via user typing), so 'onchange' never
+    // fires. Reading the element at event-time is the only reliable approach.
+    function readTab2Key(elId, windowVar, storageKey, fallback) {
+        var el = document.getElementById(elId);
+        var v  = el ? el.value.trim() : '';
+        if (v) {
+            // Keep global var and localStorage in sync whenever value differs
+            if (window[windowVar] !== v) {
+                window[windowVar] = v;
+                localStorage.setItem(storageKey, v);
+            }
+            return v;
+        }
+        return window[windowVar] || fallback;
+    }
+
     document.addEventListener('keydown', function(ev) {
         var tag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
         if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
 
-        if (keyMatches(window._3rbKeyTab2Split, ev)) {
-            ev.stopPropagation();
-            splitTab2(1); // Split (1×)
-        } else if (keyMatches(window._3rbKeyTab2Double, ev)) {
-            ev.stopPropagation();
-            splitTab2(2); // Double Split (2×)
-        } else if (keyMatches(window._3rbKeyTab2Split16, ev)) {
-            ev.stopPropagation();
-            splitTab2(4); // Split 16 (4 splits → 16 pieces)
+        // Read live from DOM so settings changes are picked up immediately
+        var splitKey   = readTab2Key('_3rb-key-tab2-split',   '_3rbKeyTab2Split',   '_3rbKeyTab2Split',   'Z');
+        var doubleKey  = readTab2Key('_3rb-key-tab2-double',  '_3rbKeyTab2Double',  '_3rbKeyTab2Double',  'X');
+        var split16Key = readTab2Key('_3rb-key-tab2-split16', '_3rbKeyTab2Split16', '_3rbKeyTab2Split16', 'C');
+
+        if (keyMatches(splitKey, ev)) {
+            // stopImmediatePropagation blocks ALL other listeners on this element
+            // (including HSLO capture listeners) — prevents the wrong tab splitting.
+            ev.stopImmediatePropagation();
+            ev.preventDefault();
+            splitTab2(1); // Split (1x)
+        } else if (keyMatches(doubleKey, ev)) {
+            ev.stopImmediatePropagation();
+            ev.preventDefault();
+            splitTab2(2); // Double Split (2x)
+        } else if (keyMatches(split16Key, ev)) {
+            ev.stopImmediatePropagation();
+            ev.preventDefault();
+            splitTab2(4); // Split 16 (4 splits = 16 pieces)
         }
     }, true); // capture=true fires before HSLO's own keydown listeners
 
