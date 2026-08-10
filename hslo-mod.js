@@ -2302,6 +2302,116 @@ window._3rbStopSkinSync = function () {
 })();
 
 // ═══════════════════════════════════════════════════════════════
+// SKIN FIX: Remove the hardcoded kbfjWV1 default & show real skins
+// ═══════════════════════════════════════════════════════════════
+(function fixSkins() {
+    // The placeholder skin HSLO assigns to every empty profile slot.
+    // When no real skin is configured, own cells AND other mod-users' cells
+    // all look identical. Fix: clear the placeholder so cells fall back to
+    // their server-assigned skin (from 3rb.io's res/skins CDN) or just colour.
+    var PLACEHOLDER = 'https://i.imgur.com/kbfjWV1.png';
+
+    // ── 1. Clear own-cell default skin ──────────────────────────
+    // Patches window.classb (the profile manager) so new / empty profiles
+    // start with an empty skin instead of the placeholder.
+    function patchProfileManager() {
+        var mgr = window.classb;
+        if (!mgr || typeof mgr.switch !== 'function') return false;
+
+        var _origSwitch = mgr.switch.bind(mgr);
+        mgr.switch = function(slot) {
+            _origSwitch(slot);
+            // After HSLO sets the profile, clear the placeholder skin from the inputs.
+            var s1 = document.getElementById('skin');
+            var s2 = document.getElementById('skin2');
+            if (s1 && s1.value === PLACEHOLDER) {
+                s1.value = '';
+                if (window.classA) window.classA.skin  = '';
+            }
+            if (s2 && s2.value === PLACEHOLDER) {
+                s2.value = '';
+                if (window.classA) window.classA.skin2 = '';
+            }
+        };
+
+        // Trigger immediately for the currently selected profile
+        var currentSlot = mgr.selected || 1;
+        mgr.switch(currentSlot);
+        return true;
+    }
+
+    // ── 2. Fix teammate / other-player fallback in skinMap ───────
+    // bundle.js falls back to O5k0G4p.png for cells without a server skin.
+    // We patch the renderer class so cells with no skin show ONLY their colour.
+    function patchRenderer() {
+        var renderer = window.classN; // HSLO renderer (holds skinMap & downloadedSkins)
+        if (!renderer || !renderer.prototype) return false;
+
+        // Patch buildSkinMap: intercept the teammate-fallback path.
+        // We override getCustomSkin so returning false (no skin) is clean.
+        var origGetCustomSkin = renderer.prototype.getCustomSkin;
+        if (origGetCustomSkin) {
+            renderer.prototype.getCustomSkin = function(worldID) {
+                var url = this.skinMap ? this.skinMap.get(worldID) : undefined;
+                // If the skinMap entry is the O5k0G4p placeholder, treat as no skin.
+                if (url === 'https://i.imgur.com/O5k0G4p.png' ||
+                    url === 'https://i.imgur.com/kbfjWV1.png') return false;
+                return origGetCustomSkin.call(this, worldID);
+            };
+        }
+        return true;
+    }
+
+    // ── 3. Per-frame skinMap cleanup ─────────────────────────────
+    // Because HSLO rebuilds skinMap every render tick, we also intercept
+    // buildSkinMap to remove placeholder entries as soon as they are added.
+    function patchBuildSkinMap() {
+        var renderer = window.classN;
+        if (!renderer || !renderer.prototype) return false;
+        var fnName = Object.getOwnPropertyNames(renderer.prototype).find(function(k) {
+            // Look for the method that calls skinMap.set
+            try { return renderer.prototype[k].toString().indexOf('skinMap.set') !== -1; } catch(e) { return false; }
+        });
+        if (!fnName) return false;
+
+        var _origBuild = renderer.prototype[fnName];
+        renderer.prototype[fnName] = function() {
+            _origBuild.apply(this, arguments);
+            // Remove placeholder entries so those cells render with just colour
+            if (this.skinMap) {
+                this.skinMap.forEach(function(url, id, map) {
+                    if (url === 'https://i.imgur.com/kbfjWV1.png' ||
+                        url === 'https://i.imgur.com/O5k0G4p.png') {
+                        map.set(id, ''); // empty → getCustomSkin returns false → colour only
+                    }
+                });
+            }
+        };
+        return true;
+    }
+
+    var tries = 0;
+    var patchedProfile  = false;
+    var patchedRenderer = false;
+    var patchedBuild    = false;
+
+    var t = setInterval(function() {
+        if (!patchedProfile)  patchedProfile  = patchProfileManager();
+        if (!patchedRenderer) patchedRenderer = patchRenderer();
+        if (!patchedBuild)    patchedBuild    = patchBuildSkinMap();
+
+        if (patchedProfile && patchedRenderer && patchedBuild) {
+            clearInterval(t);
+            console.log('[hslo-mod] ✓ Skin fix applied: placeholder skins removed, cells will show real skins or colour only.');
+        }
+        if (tries++ > 200) {
+            clearInterval(t);
+            console.log('[hslo-mod] ⚠ Skin fix: could not patch all methods (game version may differ).');
+        }
+    }, 200);
+})();
+
+// ═══════════════════════════════════════════════════════════════
 // HSLO MOD EXTENSIONS: Auto-Respawn Tab 2, Camera Lock, Tab 2 Hotkeys
 // ═══════════════════════════════════════════════════════════════
 (function initHsloExtensions() {
