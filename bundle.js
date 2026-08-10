@@ -2313,7 +2313,8 @@ const onyxv4_s5_0x1ad2eb = (()=>{
                 } else {
                     Q.mouse(0 | this.canvasX, 0 | this.canvasY);
                 }
-                if (window._3rbKeepLastDirection !== false) {
+                const keepEnabled = (window._3rbKeepLastDirection === true) || (window._3rbKeepLastDirection !== false && localStorage.getItem('_3rbKeepLastDirection') !== 'false');
+                if (keepEnabled) {
                     if (1 === A.controllingTab && A.isAliveTab2 && window._3rbLastDir2) {
                         const targetX = (A.x2 || 0) + window._3rbLastDir2.nx * 20000;
                         const targetY = (A.y2 || 0) + window._3rbLastDir2.ny * 20000;
