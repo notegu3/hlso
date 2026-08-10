@@ -139,6 +139,8 @@ function translateOpcode16(data, proxySelf) {
                     else if (skinStr.includes('imgur.com')) resolved = 'https://' + skinStr.replace(/^\/+/, '');
                     else if (skinStr.startsWith('/')) resolved = 'https://3rb.io' + skinStr;
                     else if (skinStr.startsWith('res/')) resolved = 'https://3rb.io/' + skinStr;
+                    else if (skinStr.startsWith('free/')) resolved = 'https://3rb.io/res/skins/' + skinStr + '.png';
+                    else if (skinStr.length < 15 && !skinStr.includes('/')) resolved = 'https://i.imgur.com/' + skinStr + '.png';
                     else resolved = 'https://3rb.io/res/skins/' + skinStr + '.png';
                     // Re-encode the resolved URL back to bytes for HSLO's parser
                     const resolvedBytes = new TextEncoder().encode(resolved);
@@ -1332,6 +1334,16 @@ class ProxyWebSocket {
                 skin = j.s || j.skin || '';
                 name = j.n || j.name || '';
             } catch (e) { /* treat as a literal name */ }
+        }
+        if (!skin) {
+            // Read skin for the matching tab slot (Slot 2 vs Slot 1)
+            if (this.ws === window._3rbSlot2Sock) {
+                const s2 = document.getElementById('skin2');
+                skin = s2 ? s2.value.trim() : (window.classA ? window.classA.skin2 : '');
+            } else {
+                const s1 = document.getElementById('skin');
+                skin = s1 ? s1.value.trim() : (window.classA ? window.classA.skin : '');
+            }
         }
         if (!name) name = 'Player';
 

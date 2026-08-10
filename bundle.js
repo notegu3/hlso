@@ -6760,31 +6760,61 @@ const onyxv4_s5_0x1ad2eb = (()=>{
             key: "downloadSkin",
             value(e) {
                 const t = this;
+                if (!e) return;
                 this.downloadedSkins.set(e, !1);
-				const o = new Image;
-				o.crossOrigin = "anonymous",
-				o.onload = (()=>{
-					const i = h.createElement("canvas")
-					  , s = i.getContext("2d");
-					i.width = 512,
-					i.height = 512,
-					s.beginPath(),
-					s.arc(256, 256, 256, 0, t.pi2, !0),
-					s.closePath(),
-					s.clip(),
-					s.drawImage(o, 0, 0, 512, 512),
-					o.onload = null,
-					o.src = i.toDataURL(),
-					t.downloadedSkins.set(e, o)
-				}),
-				o.onerror = (()=>{
-					t.downloadedSkins.delete(e)
-				}),
-				o.src = e
+                const o = new Image();
+                o.crossOrigin = "anonymous";
+                o.onload = (() => {
+                    try {
+                        const i = h.createElement("canvas")
+                          , s = i.getContext("2d");
+                        i.width = 512;
+                        i.height = 512;
+                        s.beginPath();
+                        s.arc(256, 256, 256, 0, t.pi2, !0);
+                        s.closePath();
+                        s.clip();
+                        s.drawImage(o, 0, 0, 512, 512);
+                        const clipped = new Image();
+                        clipped.onload = (() => {
+                            t.downloadedSkins.set(e, clipped);
+                        });
+                        clipped.onerror = (() => {
+                            t.downloadedSkins.set(e, o);
+                        });
+                        clipped.src = i.toDataURL();
+                    } catch(err) {
+                        // Tainted canvas fallback: store raw Image object
+                        t.downloadedSkins.set(e, o);
+                    }
+                });
+                o.onerror = (() => {
+                    // CORS fallback: retry without crossOrigin = "anonymous"
+                    const fb = new Image();
+                    fb.onload = (() => {
+                        t.downloadedSkins.set(e, fb);
+                    });
+                    fb.onerror = (() => {
+                        t.downloadedSkins.delete(e);
+                    });
+                    fb.src = e;
+                });
+                o.src = e;
             }
         }, {
             key: "code2url",
-            value: e=>{const _l=(e||"").toLowerCase();if(!e||_l==="removed"||_l==="none"||_l==="null")return"";if(e.includes("://"))return e;return"https://i.imgur.com/"+e+".png"}
+            value: e => {
+                if (!e) return "";
+                const _l = String(e).trim().toLowerCase();
+                if (!_l || _l === "removed" || _l === "none" || _l === "null" || _l === "undefined") return "";
+                if (e.includes("://") || e.startsWith("data:")) return e;
+                if (e.includes("imgur.com")) return "https://" + e.replace(/^\/+/, "");
+                if (e.startsWith("/")) return "https://3rb.io" + e;
+                if (e.startsWith("res/")) return "https://3rb.io/" + e;
+                if (e.startsWith("free/")) return "https://3rb.io/res/skins/" + e + ".png";
+                if (e.length < 15 && !e.includes("/")) return "https://i.imgur.com/" + e + ".png";
+                return "https://3rb.io/res/skins/" + e + ".png";
+            }
         }, {
             key: "checkHasKanji",
             value(e) {
