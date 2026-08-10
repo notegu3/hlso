@@ -2427,7 +2427,7 @@ window._3rbStopSkinSync = function () {
     // Keep _3rbKeyTab2Trick as an alias so any code still reading the old name continues to work.
     window._3rbKeyTab2Trick       = window._3rbKeyTab2Split16;
     window._3rbKeyTab2Respawn     = localStorage.getItem('_3rbKeyTab2Respawn')     || 'V';
-    window._3rbKeepLastDirection  = localStorage.getItem('_3rbKeepLastDirection')  === 'true';
+    window._3rbKeepLastDirection  = localStorage.getItem('_3rbKeepLastDirection')  !== 'false';
 
     // Restore saved key values into the hotkey input boxes once the DOM is ready
     (function restoreTab2Keys() {

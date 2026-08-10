@@ -2313,11 +2313,15 @@ const onyxv4_s5_0x1ad2eb = (()=>{
                 } else {
                     Q.mouse(0 | this.canvasX, 0 | this.canvasY);
                 }
-                if (window._3rbKeepLastDirection) {
-                    if (1 === A.controllingTab && A.isAliveTab2 && window._3rbLastVector2) {
-                        Q.mouse(0 | ((A.x2 || 0) + window._3rbLastVector2.dx), 0 | ((A.y2 || 0) + window._3rbLastVector2.dy), 2);
-                    } else if (2 === A.controllingTab && A.isAliveTab1 && window._3rbLastVector1) {
-                        Q.mouse(0 | ((A.x1 || 0) + window._3rbLastVector1.dx), 0 | ((A.y1 || 0) + window._3rbLastVector1.dy), 1);
+                if (window._3rbKeepLastDirection !== false) {
+                    if (1 === A.controllingTab && A.isAliveTab2 && window._3rbLastDir2) {
+                        const targetX = (A.x2 || 0) + window._3rbLastDir2.nx * 20000;
+                        const targetY = (A.y2 || 0) + window._3rbLastDir2.ny * 20000;
+                        Q.mouse(0 | targetX, 0 | targetY, 2);
+                    } else if (2 === A.controllingTab && A.isAliveTab1 && window._3rbLastDir1) {
+                        const targetX = (A.x1 || 0) + window._3rbLastDir1.nx * 20000;
+                        const targetY = (A.y1 || 0) + window._3rbLastDir1.ny * 20000;
+                        Q.mouse(0 | targetX, 0 | targetY, 1);
                     }
                 }
             }
@@ -8141,10 +8145,17 @@ const onyxv4_s5_0x1ad2eb = (()=>{
             value(e, t, tab) {
                 const o = tab || A.controllingTab || 1;
                 if (!tab || tab === A.controllingTab) {
-                    if (1 === o) {
-                        window._3rbLastVector1 = { dx: e - (A.x1 || 0), dy: t - (A.y1 || 0) };
-                    } else if (2 === o) {
-                        window._3rbLastVector2 = { dx: e - (A.x2 || 0), dy: t - (A.y2 || 0) };
+                    const cx = (1 === o) ? (A.x1 || 0) : (A.x2 || 0);
+                    const cy = (1 === o) ? (A.y1 || 0) : (A.y2 || 0);
+                    const dx = e - cx;
+                    const dy = t - cy;
+                    const len = Math.sqrt(dx * dx + dy * dy);
+                    if (len > 5) {
+                        if (1 === o) {
+                            window._3rbLastDir1 = { nx: dx / len, ny: dy / len };
+                        } else if (2 === o) {
+                            window._3rbLastDir2 = { nx: dx / len, ny: dy / len };
+                        }
                     }
                 }
                 if (this.connected(o)) {
