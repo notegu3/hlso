@@ -2523,27 +2523,24 @@ window._3rbStopSkinSync = function () {
     }
 
     // ── 6. Fast Respawn / Kill the OTHER (background) tab ────────
-    // Sends spectate opcode (1) to kill current cell without disconnect, then spawns instantly
+    // Reconnects the background tab socket to instantly kill the current cell and respawn randomly
     function fastRespawnOtherTab() {
         var otherSlot = (window._3rbControlledTab === 1) ? 2 : 1;
-        var ws = (otherSlot === 2) ? window._3rbSlot2Sock : window._3rbSlot1Sock;
+        console.log('[MAD PLUS] 🔄 Fast Respawn target slot:', otherSlot);
 
-        if (ws && ws.readyState === 1) {
-            var op1 = (ws._3rbQe && ws._3rbQe[1] !== undefined) ? ws._3rbQe[1] : 1;
-            try { ws._nativeSend(new Uint8Array([op1]).buffer); } catch(e) {}
-        }
-
-        if (window.classA) {
-            if (otherSlot === 2) window.classA.isAliveTab2 = false;
-            else window.classA.isAliveTab1 = false;
-        }
-
-        setTimeout(function() {
-            if (window.classQ) {
-                window.classQ.myTurn = true;
-                try { window.classQ.spawn(otherSlot); } catch(e) {}
+        if (window.classq && typeof window.classq.reconnect === 'function') {
+            try {
+                window.classq.reconnect(otherSlot);
+                return;
+            } catch(e) {
+                console.warn('[MAD PLUS] classq.reconnect error:', e);
             }
-        }, 120);
+        }
+
+        var ws = (otherSlot === 2) ? window._3rbSlot2Sock : window._3rbSlot1Sock;
+        if (ws && ws.readyState === 1) {
+            try { ws.close(); } catch(e) {}
+        }
     }
 
     // Keep old name as alias for any external code that might call it

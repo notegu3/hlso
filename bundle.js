@@ -7594,8 +7594,7 @@ const onyxv4_s5_0x1ad2eb = (()=>{
 						})
 					}, 100)
 				} else if (tab === 2) {
-					if (k.multiboxMode === "off") return m.alert("HSLO", "You've to turn on multibox mode first!");
-					q.Tab2.close(),
+					q.Tab2 && q.Tab2.close(),
                     q.Tab2 = null,
                     j.protocolKey2 = null,
                     j.clientKey2 = null,
