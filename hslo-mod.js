@@ -135,13 +135,15 @@ function translateOpcode16(data, proxySelf) {
                     skinStr = '';
                 } else {
                     let resolved;
-                    if (skinStr.includes('://') || skinStr.startsWith('data:')) resolved = skinStr;
-                    else if (skinStr.includes('imgur.com')) resolved = 'https://' + skinStr.replace(/^\/+/, '');
-                    else if (skinStr.startsWith('/')) resolved = 'https://3rb.io' + skinStr;
-                    else if (skinStr.startsWith('res/')) resolved = 'https://3rb.io/' + skinStr;
-                    else if (skinStr.startsWith('free/')) resolved = 'https://3rb.io/res/skins/' + skinStr + '.png';
-                    else if (skinStr.length < 15 && !skinStr.includes('/')) resolved = 'https://i.imgur.com/' + skinStr + '.png';
-                    else resolved = 'https://3rb.io/res/skins/' + skinStr + '.png';
+                    const sTrim = skinStr.trim();
+                    if (sTrim.includes('://') || sTrim.startsWith('data:')) resolved = sTrim;
+                    else if (sTrim.includes('imgur.com')) resolved = 'https://' + sTrim.replace(/^\/+/, '');
+                    else if (sTrim.startsWith('/')) resolved = 'https://3rb.io' + sTrim;
+                    else if (sTrim.startsWith('res/')) resolved = 'https://3rb.io/' + sTrim;
+                    else if (sTrim.startsWith('free/')) resolved = 'https://3rb.io/res/skins/free/' + sTrim.replace(/^free\//, '').replace(/\.png$/, '') + '.png';
+                    else if (/^\d+$/.test(sTrim)) resolved = 'https://3rb.io/res/skins/free/' + sTrim + '.png';
+                    else if (/^[a-zA-Z0-9]{5,10}$/.test(sTrim) && /[a-zA-Z]/.test(sTrim)) resolved = 'https://i.imgur.com/' + sTrim + '.png';
+                    else resolved = 'https://3rb.io/res/skins/' + sTrim + '.png';
                     // Re-encode the resolved URL back to bytes for HSLO's parser
                     const resolvedBytes = new TextEncoder().encode(resolved);
                     skin = Array.from(resolvedBytes);

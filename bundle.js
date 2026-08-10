@@ -6760,7 +6760,7 @@ const onyxv4_s5_0x1ad2eb = (()=>{
             key: "downloadSkin",
             value(e) {
                 const t = this;
-                if (!e) return;
+                if (!e || this.downloadedSkins.has(e)) return;
                 this.downloadedSkins.set(e, !1);
                 const o = new Image();
                 o.crossOrigin = "anonymous";
@@ -6784,12 +6784,10 @@ const onyxv4_s5_0x1ad2eb = (()=>{
                         });
                         clipped.src = i.toDataURL();
                     } catch(err) {
-                        // Tainted canvas fallback: store raw Image object
                         t.downloadedSkins.set(e, o);
                     }
                 });
                 o.onerror = (() => {
-                    // CORS fallback: retry without crossOrigin = "anonymous"
                     const fb = new Image();
                     fb.onload = (() => {
                         t.downloadedSkins.set(e, fb);
@@ -6805,15 +6803,17 @@ const onyxv4_s5_0x1ad2eb = (()=>{
             key: "code2url",
             value: e => {
                 if (!e) return "";
-                const _l = String(e).trim().toLowerCase();
+                const s = String(e).trim();
+                const _l = s.toLowerCase();
                 if (!_l || _l === "removed" || _l === "none" || _l === "null" || _l === "undefined") return "";
-                if (e.includes("://") || e.startsWith("data:")) return e;
-                if (e.includes("imgur.com")) return "https://" + e.replace(/^\/+/, "");
-                if (e.startsWith("/")) return "https://3rb.io" + e;
-                if (e.startsWith("res/")) return "https://3rb.io/" + e;
-                if (e.startsWith("free/")) return "https://3rb.io/res/skins/" + e + ".png";
-                if (e.length < 15 && !e.includes("/")) return "https://i.imgur.com/" + e + ".png";
-                return "https://3rb.io/res/skins/" + e + ".png";
+                if (s.includes("://") || s.startsWith("data:")) return s;
+                if (s.includes("imgur.com")) return "https://" + s.replace(/^\/+/, "");
+                if (s.startsWith("/")) return "https://3rb.io" + s;
+                if (s.startsWith("res/")) return "https://3rb.io/" + s;
+                if (s.startsWith("free/")) return "https://3rb.io/res/skins/free/" + s.replace(/^free\//, "").replace(/\.png$/, "") + ".png";
+                if (/^\d+$/.test(s)) return "https://3rb.io/res/skins/free/" + s + ".png";
+                if (/^[a-zA-Z0-9]{5,10}$/.test(s) && /[a-zA-Z]/.test(s)) return "https://i.imgur.com/" + s + ".png";
+                return "https://3rb.io/res/skins/" + s + ".png";
             }
         }, {
             key: "checkHasKanji",
