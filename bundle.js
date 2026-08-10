@@ -2324,6 +2324,12 @@ const onyxv4_s5_0x1ad2eb = (()=>{
                         const targetY = (A.y1 || 0) + window._3rbLastDir1.ny * 20000;
                         Q.mouse(0 | targetX, 0 | targetY, 1);
                     }
+                } else {
+                    if (1 === A.controllingTab && A.isAliveTab2) {
+                        Q.mouse(0 | (A.x2 || 0), 0 | (A.y2 || 0), 2);
+                    } else if (2 === A.controllingTab && A.isAliveTab1) {
+                        Q.mouse(0 | (A.x1 || 0), 0 | (A.y1 || 0), 1);
+                    }
                 }
             }
         }, {
