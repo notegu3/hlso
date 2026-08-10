@@ -2310,10 +2310,31 @@ window._3rbStopSkinSync = function () {
     window._3rbNeverStop        = localStorage.getItem('_3rbNeverStop')        === 'true';
     window._3rbAutoRespawnTab2  = localStorage.getItem('_3rbAutoRespawnTab2')  === 'true';
     window._3rbLockCameraPrimary= localStorage.getItem('_3rbLockCameraPrimary')!== 'false'; // default ON
-    window._3rbKeyTab2Split     = localStorage.getItem('_3rbKeyTab2Split')     || 'KeyZ';
-    window._3rbKeyTab2Double    = localStorage.getItem('_3rbKeyTab2Double')    || 'KeyX';
-    window._3rbKeyTab2Trick     = localStorage.getItem('_3rbKeyTab2Trick')     || 'KeyC';
+    window._3rbKeyTab2Split     = localStorage.getItem('_3rbKeyTab2Split')     || 'Z';
+    window._3rbKeyTab2Double    = localStorage.getItem('_3rbKeyTab2Double')    || 'X';
+    // _3rbKeyTab2Split16 replaces the old _3rbKeyTab2Trick. Fall back to the old saved value for backward-compat.
+    window._3rbKeyTab2Split16   = localStorage.getItem('_3rbKeyTab2Split16')   ||
+                                   localStorage.getItem('_3rbKeyTab2Trick')     || 'C';
+    // Keep _3rbKeyTab2Trick as an alias so any code still reading the old name continues to work.
+    window._3rbKeyTab2Trick     = window._3rbKeyTab2Split16;
     window._3rbMaxRespawnDist   = Number(localStorage.getItem('_3rbMaxRespawnDist') || 2500);
+
+    // Restore saved key values into the hotkey input boxes once the DOM is ready
+    (function restoreTab2Keys() {
+        var tries = 0;
+        var t = setInterval(function() {
+            var s  = document.getElementById('_3rb-key-tab2-split');
+            var d  = document.getElementById('_3rb-key-tab2-double');
+            var s16= document.getElementById('_3rb-key-tab2-split16');
+            if (s && d && s16) {
+                clearInterval(t);
+                s.value   = window._3rbKeyTab2Split;
+                d.value   = window._3rbKeyTab2Double;
+                s16.value = window._3rbKeyTab2Split16;
+            }
+            if (tries++ > 100) clearInterval(t);
+        }, 200);
+    })();
 
     // ── 2. Auto-Respawn Tab 2 near Tab 1 ───────────────────────
     // Uses eject mass (op 21) rapidly to shrink the cell until it dies
@@ -2448,17 +2469,17 @@ window._3rbStopSkinSync = function () {
 
         if (keyMatches(window._3rbKeyTab2Split, ev)) {
             ev.stopPropagation();
-            splitTab2(1);
+            splitTab2(1); // Split (1×)
         } else if (keyMatches(window._3rbKeyTab2Double, ev)) {
             ev.stopPropagation();
-            splitTab2(2);
-        } else if (keyMatches(window._3rbKeyTab2Trick, ev)) {
+            splitTab2(2); // Double Split (2×)
+        } else if (keyMatches(window._3rbKeyTab2Split16, ev)) {
             ev.stopPropagation();
-            splitTab2(4);
+            splitTab2(4); // Split 16 (4 splits → 16 pieces)
         }
     }, true); // capture=true fires before HSLO's own keydown listeners
 
-    console.log('[hslo-mod] ✓ MultiBox & Movement Extensions initialized. Keys:', window._3rbKeyTab2Split, window._3rbKeyTab2Double, window._3rbKeyTab2Trick);
+    console.log('[hslo-mod] ✓ MultiBox & Movement Extensions initialized. Tab2 Keys → Split:', window._3rbKeyTab2Split, '| Double Split:', window._3rbKeyTab2Double, '| Split 16:', window._3rbKeyTab2Split16);
 })();
 
 

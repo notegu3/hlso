@@ -903,17 +903,21 @@
             <span class="title">Multibox switch</span>
             <input class="key" value="TAB">
           </div>
+          <div class="row divider"></div>
+          <div class="row" style="pointer-events:none; opacity:0.55; font-size:11px; letter-spacing:0.5px; padding: 4px 0 2px 0;">
+            <span class="title" style="color:#64d8ff; font-weight:700; text-transform:uppercase; font-size:10px; letter-spacing:1px;">&#9654; Tab 2 Control Keys</span>
+          </div>
           <div class="row" name="tab2SplitKey">
-            <span class="title">Tab 2 Split (1x)</span>
-            <input class="key" id="_3rb-key-tab2-split" value="Z" onchange="var v=this.value.trim()||'KeyZ'; window._3rbKeyTab2Split=v; localStorage.setItem('_3rbKeyTab2Split',v);">
+            <span class="title">&#9656; Tab 2 &#8212; Split</span>
+            <input class="key" id="_3rb-key-tab2-split" value="Z" onchange="(function(el){ var v = el.value.trim() || 'Z'; window._3rbKeyTab2Split = v; localStorage.setItem('_3rbKeyTab2Split', v); })(this);">
           </div>
           <div class="row" name="tab2DoubleSplitKey">
-            <span class="title">Tab 2 Double Split</span>
-            <input class="key" id="_3rb-key-tab2-double" value="X" onchange="var v=this.value.trim()||'KeyX'; window._3rbKeyTab2Double=v; localStorage.setItem('_3rbKeyTab2Double',v);">
+            <span class="title">&#9656; Tab 2 &#8212; Double Split</span>
+            <input class="key" id="_3rb-key-tab2-double" value="X" onchange="(function(el){ var v = el.value.trim() || 'X'; window._3rbKeyTab2Double = v; localStorage.setItem('_3rbKeyTab2Double', v); })(this);">
           </div>
-          <div class="row" name="tab2TricksplitKey">
-            <span class="title">Tab 2 Tricksplit 16</span>
-            <input class="key" id="_3rb-key-tab2-trick" value="C" onchange="var v=this.value.trim()||'KeyC'; window._3rbKeyTab2Trick=v; localStorage.setItem('_3rbKeyTab2Trick',v);">
+          <div class="row" name="tab2Split16Key">
+            <span class="title">&#9656; Tab 2 &#8212; Split 16</span>
+            <input class="key" id="_3rb-key-tab2-split16" value="C" onchange="(function(el){ var v = el.value.trim() || 'C'; window._3rbKeyTab2Split16 = v; localStorage.setItem('_3rbKeyTab2Split16', v); })(this);">
           </div>
           <div class="row" name="togglemaouCircleSkin">
             <span class="title">Toggle Maou Circle Skin</span>
