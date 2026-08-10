@@ -6256,7 +6256,8 @@ const onyxv4_s5_0x1ad2eb = (()=>{
         }, {
             key: "move",
             value() {
-                const spd = Math.max(1, ~~k.cameraSpeed || 15);
+                const rawSpd = ~~k.cameraSpeed || 15;
+                const spd = Math.max(1, 31 - Math.min(30, rawSpd));
                 A.isAlive ? (this.x += (A.x - this.x) / spd,
                 this.y += (A.y - this.y) / spd) : this.isSpectating && (this.x = (29 * this.x + this.spectatePoints.x) / 30,
                 this.y = (29 * this.y + this.spectatePoints.y) / 30)
