@@ -2523,45 +2523,22 @@ window._3rbStopSkinSync = function () {
         }
     }
 
-    // ── 6. Fast Respawn / Kill the OTHER (background) tab ────────
-    // Reconnects the background tab socket to instantly kill the current cell and respawn randomly
+    // ── 6. Reconnect the OTHER (background) tab ─────────────────
+    // Directly triggers q.reconnect(2) when controlling Tab 1, or q.reconnect(1) when controlling Tab 2
     function fastRespawnOtherTab() {
         var otherSlot = (window._3rbControlledTab === 1) ? 2 : 1;
-        console.log('[MAD PLUS] 🔄 Fast Respawn target slot:', otherSlot);
+        console.log('[MAD PLUS] 🔄 Reconnecting Tab', otherSlot);
 
-        // 1. Close target socket to destroy current cell on 3rb server
-        var oldWs = (otherSlot === 2) ? window._3rbSlot2Sock : window._3rbSlot1Sock;
-        if (oldWs) {
-            try { oldWs.close(); } catch(e) {}
-        }
-
-        if (window.classA) {
-            if (otherSlot === 2) window.classA.isAliveTab2 = false;
-            else window.classA.isAliveTab1 = false;
-        }
-
-        // 2. Trigger HSLO reconnect for target slot
         if (window.classq && typeof window.classq.reconnect === 'function') {
-            try { window.classq.reconnect(otherSlot); } catch(e) {}
+            try {
+                window.classq.reconnect(otherSlot);
+                return;
+            } catch(e) {}
         }
 
-        // 3. Monitor new socket connection and send 3rb.io V5 spawn payload directly
-        var checks = 0;
-        var t = setInterval(function() {
-            var proxy = (otherSlot === 2) ? window._3rbProxySlot2 : window._3rbProxySlot1;
-            var sock  = (otherSlot === 2) ? window._3rbSlot2Sock  : window._3rbSlot1Sock;
-
-            if (sock && sock.readyState === 1 && proxy && typeof proxy._sendV5Spawn === 'function') {
-                clearInterval(t);
-                console.log('[MAD PLUS] 🚀 Sending direct 3rb V5 spawn for slot:', otherSlot);
-                proxy._sendV5Spawn(new Uint8Array([0]));
-                if (window.classA) {
-                    if (otherSlot === 2) window.classA.isAliveTab2 = true;
-                    else window.classA.isAliveTab1 = true;
-                }
-            }
-            if (checks++ > 40) clearInterval(t);
-        }, 100);
+        var btnId = (otherSlot === 2) ? 'reconnect02' : 'reconnect01';
+        var btn = document.getElementById(btnId);
+        if (btn) btn.click();
     }
 
     // Keep old name as alias for any external code that might call it
