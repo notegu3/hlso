@@ -5733,9 +5733,7 @@ const onyxv4_s5_0x1ad2eb = (()=>{
                         this.y2 = t2
                     }
                     this.score < this.mass && (this.score = this.mass);
-                    const zi = Math.pow(Math.min(64 / (Math.abs(this.x - e) || 1), 1), .4)
-                      , zn = Math.max(s.innerWidth / 1920, s.innerHeight / 1080);
-                    L.autoZoomViewport = (isNaN(zi) || isNaN(zn)) ? 1 : zi * zn
+                    L.autoZoomViewport = 1;
                 }
             }
         }, {
@@ -6258,28 +6256,28 @@ const onyxv4_s5_0x1ad2eb = (()=>{
         }, {
             key: "move",
             value() {
-                A.isAlive ? (this.x += (A.x - this.x) / k.cameraSpeed,
-                this.y += (A.y - this.y) / k.cameraSpeed) : this.isSpectating && (this.x = (29 * this.x + this.spectatePoints.x) / 30,
+                const spd = Math.max(1, ~~k.cameraSpeed || 15);
+                A.isAlive ? (this.x += (A.x - this.x) / spd,
+                this.y += (A.y - this.y) / spd) : this.isSpectating && (this.x = (29 * this.x + this.spectatePoints.x) / 30,
                 this.y = (29 * this.y + this.spectatePoints.y) / 30)
             }
         }, {
             key: "updateView",
             value() {
                 let e = this.targetViewport;
-                "on" === k.autoZoom && (e *= this.autoZoomViewport),
                 this.viewport += (e - this.viewport) / 8;
                 const t = re.canvas.width / 2 / this.viewport
                   , o = re.canvas.height / 2 / this.viewport;
                 const _t = this.iw / 2 / this.Tab3Viewport
                   , _o = this.ih / 2 / this.Tab3Viewport;
-                this.viewBounds.left = Math.max(-t + this.x, G.left),
-                this.viewBounds.right = Math.min(t + this.x, G.right),
-                this.viewBounds.top = Math.max(-o + this.y, G.top),
-                this.viewBounds.bottom = Math.min(o + this.y, G.bottom);
-                this.Tab3ViewBounds.left = Math.max(-_t + ghostCells[0].x, G.Tab3LT.left),
-                this.Tab3ViewBounds.right = Math.min(_t + ghostCells[0].x, G.Tab3LT.right),
-                this.Tab3ViewBounds.top = Math.max(-_o + ghostCells[0].y, G.Tab3LT.top),
-                this.Tab3ViewBounds.bottom = Math.min(_o + ghostCells[0].y, G.Tab3LT.bottom)
+                this.viewBounds.left = -t + this.x;
+                this.viewBounds.right = t + this.x;
+                this.viewBounds.top = -o + this.y;
+                this.viewBounds.bottom = o + this.y;
+                this.Tab3ViewBounds.left = Math.max(-_t + ghostCells[0].x, G.Tab3LT.left);
+                this.Tab3ViewBounds.right = Math.min(_t + ghostCells[0].x, G.Tab3LT.right);
+                this.Tab3ViewBounds.top = Math.max(-_o + ghostCells[0].y, G.Tab3LT.top);
+                this.Tab3ViewBounds.bottom = Math.min(_o + ghostCells[0].y, G.Tab3LT.bottom);
             }
         }, {
             key: "isSpectating",
