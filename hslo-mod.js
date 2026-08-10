@@ -2311,7 +2311,7 @@ window._3rbStopSkinSync = function () {
     // their server-assigned skin (from 3rb.io's res/skins CDN) or just colour.
     var PLACEHOLDER = 'https://i.imgur.com/kbfjWV1.png';
 
-    // Purge saved placeholder skin from localStorage profiles
+    // Purge saved placeholder skin & force everyoneSkins setting off
     try {
         var profs = JSON.parse(localStorage.getItem('profiles') || '{}');
         var changed = false;
@@ -2322,6 +2322,12 @@ window._3rbStopSkinSync = function () {
             }
         });
         if (changed) localStorage.setItem('profiles', JSON.stringify(profs));
+
+        var st = JSON.parse(localStorage.getItem('settings') || '{}');
+        if (st.everyoneSkins !== 'off') {
+            st.everyoneSkins = 'off';
+            localStorage.setItem('settings', JSON.stringify(st));
+        }
     } catch(e) {}
 
     // ── 1. Clear own-cell default skin ──────────────────────────

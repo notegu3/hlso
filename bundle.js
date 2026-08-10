@@ -1595,7 +1595,7 @@ const onyxv4_s5_0x1ad2eb = (()=>{
                 this.urlSkins = c.get("settings", "urlSkins") || "on",
                 this.kanjiSkins = c.get("settings", "kanjiSkins") || "on",
                 this.vanillaSkins = c.get("settings", "vanillaSkins") || "off",
-                this.everyoneSkins = c.get("settings", "everyoneSkins") || "on",
+                this.everyoneSkins = c.get("settings", "everyoneSkins") || "off",
                 this.hsloSkins = c.get("settings", "hsloSkins") || "on",
                 this.skins3rb = c.get("settings", "skins3rb") || "on",
                 this.food = c.get("settings", "food") || "monoColored",
