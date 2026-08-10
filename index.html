@@ -833,34 +833,7 @@
             <i class="fas fa-chevron-right" aria-hidden="true"></i>
           </span>
         </div>
-        <div class="row divider"></div>
-        <div class="row">
-          <span class="title">Continuous Movement (Never Stop)</span>
-          <span class="settings-options" type="options" name="__3rbNeverStop">
-            <i class="fas fa-chevron-left" aria-hidden="true"></i>
-            <b id="_3rb-toggle-neverstop" value="off" class="active" onclick="window._3rbNeverStop=false; localStorage.setItem('_3rbNeverStop','false'); document.querySelectorAll('#settings [name=__3rbNeverStop] b').forEach(function(b){b.className='';}); this.className='active';">Off</b>
-            <b id="_3rb-toggle-neverstop-on" value="on" onclick="window._3rbNeverStop=true; localStorage.setItem('_3rbNeverStop','true'); document.querySelectorAll('#settings [name=__3rbNeverStop] b').forEach(function(b){b.className='';}); this.className='active';">On</b>
-            <i class="fas fa-chevron-right" aria-hidden="true"></i>
-          </span>
-        </div>
-        <div class="row">
-          <span class="title">Auto-Respawn Tab 2 Near Tab 1</span>
-          <span class="settings-options" type="options" name="__3rbAutoRespawn">
-            <i class="fas fa-chevron-left" aria-hidden="true"></i>
-            <b id="_3rb-toggle-autorespawn" value="off" class="active" onclick="window._3rbAutoRespawnTab2=false; localStorage.setItem('_3rbAutoRespawnTab2','false'); document.querySelectorAll('#settings [name=__3rbAutoRespawn] b').forEach(function(b){b.className='';}); this.className='active';">Off</b>
-            <b id="_3rb-toggle-autorespawn-on" value="on" onclick="window._3rbAutoRespawnTab2=true; localStorage.setItem('_3rbAutoRespawnTab2','true'); document.querySelectorAll('#settings [name=__3rbAutoRespawn] b').forEach(function(b){b.className='';}); this.className='active';">On</b>
-            <i class="fas fa-chevron-right" aria-hidden="true"></i>
-          </span>
-        </div>
-        <div class="row">
-          <span class="title">Lock Camera to Primary Tab</span>
-          <span class="settings-options" type="options" name="__3rbCamLock">
-            <i class="fas fa-chevron-left" aria-hidden="true"></i>
-            <b id="_3rb-toggle-camlock-off" value="off" onclick="window._3rbLockCameraPrimary=false; localStorage.setItem('_3rbLockCameraPrimary','false'); document.querySelectorAll('#settings [name=__3rbCamLock] b').forEach(function(b){b.className='';}); this.className='active';">Off</b>
-            <b id="_3rb-toggle-camlock" value="on" class="active" onclick="window._3rbLockCameraPrimary=true; localStorage.setItem('_3rbLockCameraPrimary','true'); document.querySelectorAll('#settings [name=__3rbCamLock] b').forEach(function(b){b.className='';}); this.className='active';">On</b>
-            <i class="fas fa-chevron-right" aria-hidden="true"></i>
-          </span>
-        </div>
+
       </div>
     </div>
     <div id="inputs" class="menu-panel">
@@ -918,6 +891,10 @@
           <div class="row" name="tab2Split16Key">
             <span class="title">&#9656; Tab 2 &#8212; Split 16</span>
             <input class="key" id="_3rb-key-tab2-split16" value="C" onchange="(function(el){ var v = el.value.trim() || 'C'; window._3rbKeyTab2Split16 = v; localStorage.setItem('_3rbKeyTab2Split16', v); })(this);">
+          </div>
+          <div class="row" name="tab2FastRespawnKey">
+            <span class="title">&#9656; Tab 2 &#8212; Fast Respawn / Kill</span>
+            <input class="key" id="_3rb-key-tab2-respawn" value="V" onchange="(function(el){ var v = el.value.trim() || 'V'; window._3rbKeyTab2Respawn = v; localStorage.setItem('_3rbKeyTab2Respawn', v); })(this);">
           </div>
           <div class="row" name="togglemaouCircleSkin">
             <span class="title">Toggle Maou Circle Skin</span>

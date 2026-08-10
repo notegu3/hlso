@@ -1194,8 +1194,7 @@ class ProxyWebSocket {
                         return;
                     }
 
-                    // V5 mouse (op 16) translation & NeverStop vector extension
-                    // NeverStop only applies to SLOT 2 (the inactive/secondary tab)
+                    // V5 mouse (op 16) translation
                     if (op === 16) {
                         if (u8.length !== 17) {
                             const dvIn = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
@@ -1206,44 +1205,12 @@ class ProxyWebSocket {
                                 mx = dvIn.getInt16(1, true); my = dvIn.getInt16(3, true);
                             }
                             if (mx !== null && my !== null) {
-                                if (window._3rbNeverStop && this._slot === 2) {
-                                    var myPos = window._crizoTab2Pos || window._3rbMyPos;
-                                    if (myPos && (myPos.x !== 0 || myPos.y !== 0)) {
-                                        var dx = mx - myPos.x;
-                                        var dy = my - myPos.y;
-                                        var len = Math.sqrt(dx * dx + dy * dy);
-                                        if (len > 0) {
-                                            mx = myPos.x + (dx / len) * 20000;
-                                            my = myPos.y + (dy / len) * 20000;
-                                        }
-                                    }
-                                }
                                 const out = new DataView(new ArrayBuffer(17));
                                 out.setUint8(0, 16);
                                 out.setFloat64(1, mx, true);
                                 out.setFloat64(9, my, true);
                                 this._rawSendV5(out.buffer);
                                 return;
-                            }
-                        } else if (window._3rbNeverStop && this._slot === 2) {
-                            const dvIn = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
-                            var mx = dvIn.getFloat64(1, true);
-                            var my = dvIn.getFloat64(9, true);
-                            var myPos = window._crizoTab2Pos || window._3rbMyPos;
-                            if (myPos && (myPos.x !== 0 || myPos.y !== 0)) {
-                                var dx = mx - myPos.x;
-                                var dy = my - myPos.y;
-                                var len = Math.sqrt(dx * dx + dy * dy);
-                                if (len > 0) {
-                                    mx = myPos.x + (dx / len) * 20000;
-                                    my = myPos.y + (dy / len) * 20000;
-                                    const out = new DataView(new ArrayBuffer(17));
-                                    out.setUint8(0, 16);
-                                    out.setFloat64(1, mx, true);
-                                    out.setFloat64(9, my, true);
-                                    this._rawSendV5(out.buffer);
-                                    return;
-                                }
                             }
                         }
                         return;
@@ -2450,9 +2417,6 @@ window._3rbStopSkinSync = function () {
 (function initHsloExtensions() {
 
     // ── 1. Load saved settings ──────────────────────────────────
-    window._3rbNeverStop        = localStorage.getItem('_3rbNeverStop')        === 'true';
-    window._3rbAutoRespawnTab2  = localStorage.getItem('_3rbAutoRespawnTab2')  === 'true';
-    window._3rbLockCameraPrimary= localStorage.getItem('_3rbLockCameraPrimary')!== 'false'; // default ON
     window._3rbKeyTab2Split     = localStorage.getItem('_3rbKeyTab2Split')     || 'Z';
     window._3rbKeyTab2Double    = localStorage.getItem('_3rbKeyTab2Double')    || 'X';
     // _3rbKeyTab2Split16 replaces the old _3rbKeyTab2Trick. Fall back to the old saved value for backward-compat.
@@ -2460,116 +2424,25 @@ window._3rbStopSkinSync = function () {
                                    localStorage.getItem('_3rbKeyTab2Trick')     || 'C';
     // Keep _3rbKeyTab2Trick as an alias so any code still reading the old name continues to work.
     window._3rbKeyTab2Trick     = window._3rbKeyTab2Split16;
-    window._3rbMaxRespawnDist   = Number(localStorage.getItem('_3rbMaxRespawnDist') || 2500);
+    window._3rbKeyTab2Respawn   = localStorage.getItem('_3rbKeyTab2Respawn')   || 'V';
 
     // Restore saved key values into the hotkey input boxes once the DOM is ready
     (function restoreTab2Keys() {
         var tries = 0;
         var t = setInterval(function() {
-            var s  = document.getElementById('_3rb-key-tab2-split');
-            var d  = document.getElementById('_3rb-key-tab2-double');
-            var s16= document.getElementById('_3rb-key-tab2-split16');
+            var s   = document.getElementById('_3rb-key-tab2-split');
+            var d   = document.getElementById('_3rb-key-tab2-double');
+            var s16 = document.getElementById('_3rb-key-tab2-split16');
+            var rsp = document.getElementById('_3rb-key-tab2-respawn');
             if (s && d && s16) {
                 clearInterval(t);
                 s.value   = window._3rbKeyTab2Split;
                 d.value   = window._3rbKeyTab2Double;
                 s16.value = window._3rbKeyTab2Split16;
+                if (rsp) rsp.value = window._3rbKeyTab2Respawn;
             }
             if (tries++ > 100) clearInterval(t);
         }, 200);
-    })();
-
-    // ── 2. Auto-Respawn Tab 2 near Tab 1 ───────────────────────
-    // Uses eject mass (op 21) rapidly to shrink the cell until it dies
-    function killTab2() {
-        var ws2 = window._3rbSlot2Sock;
-        if (!ws2 || ws2.readyState !== 1) return;
-        // Mark as killed so position tracking resets
-        ws2._3rbTab2Killed = Date.now();
-        // Eject mass 20 times rapidly (shrinks cell, eventually it dies or gets eaten)
-        for (var i = 0; i < 20; i++) {
-            (function(d) {
-                setTimeout(function() {
-                    try { ws2._nativeSend(new Uint8Array([21]).buffer); } catch(e) {}
-                }, d);
-            })(i * 50);
-        }
-    }
-
-    // Track Tab 2 position stability: only check respawn after position has been
-    // stable for 4+ seconds (avoids triggering immediately on fresh spawn)
-    var _tab2PosStableAt = 0;
-    var _tab2LastCheckedPos = null;
-
-    function checkTab2AutoRespawn() {
-        if (!window._3rbAutoRespawnTab2) return;
-        var pos1 = window._3rbMyPos;
-        var pos2 = window._crizoTab2Pos;
-        if (!pos1 || !pos2) return;
-        if (pos1.x === 0 && pos1.y === 0) return;
-        if (pos2.x === 0 && pos2.y === 0) return;
-
-        var ws2 = window._3rbSlot2Sock;
-        if (!ws2 || ws2.readyState !== 1) return;
-
-        // If Tab 2 was just killed, skip checks for 5 seconds
-        if (ws2._3rbTab2Killed && Date.now() - ws2._3rbTab2Killed < 5000) return;
-
-        // Track position stability: if position changed since last check, reset timer
-        var now = Date.now();
-        var posKey = Math.round(pos2.x / 100) + ',' + Math.round(pos2.y / 100);
-        if (!_tab2LastCheckedPos || _tab2LastCheckedPos !== posKey) {
-            _tab2LastCheckedPos = posKey;
-            _tab2PosStableAt = now;
-            return; // Position changed, wait for stability
-        }
-        // Only act if position has been stable for 4+ seconds
-        if (now - _tab2PosStableAt < 4000) return;
-
-        var dx = pos2.x - pos1.x;
-        var dy = pos2.y - pos1.y;
-        var dist = Math.sqrt(dx * dx + dy * dy);
-        var maxDist = window._3rbMaxRespawnDist || 2500;
-
-        if (dist > maxDist) {
-            if (now - (ws2._lastAutoRespawn || 0) > 6000) {
-                ws2._lastAutoRespawn = now;
-                console.log('%c[MAD PLUS] 🔄 Tab 2 stable but far (' + Math.round(dist) + ' > ' + maxDist + ') — killing...', 'color:#ffb703;font-weight:bold');
-                // Reset position tracking
-                _tab2LastCheckedPos = null;
-                _tab2PosStableAt = 0;
-                window._crizoTab2Pos = null;
-                killTab2();
-            }
-        }
-    }
-    setInterval(checkTab2AutoRespawn, 1000);
-
-    // ── 3. Camera Lock on Primary Tab ───────────────────────────
-    // Hook into bundle.js camera move() to bias toward Tab 1 position when lock is ON
-    (function hookCamera() {
-        var tries = 0;
-        var interval = setInterval(function() {
-            // Try to find the camera instance via window.se
-            if (window.se && window.se.camera && typeof window.se.camera.move === 'function') {
-                var cam = window.se.camera;
-                var origMove = cam.move.bind(cam);
-                cam.move = function() {
-                    origMove();
-                    if (window._3rbLockCameraPrimary && window._3rbMyPos && window._3rbMyPos.x !== 0) {
-                        this.x += (window._3rbMyPos.x - this.x) * 0.2;
-                        this.y += (window._3rbMyPos.y - this.y) * 0.2;
-                    }
-                };
-                console.log('[MAD PLUS] ✓ Camera lock hooked via window.se.camera');
-                clearInterval(interval);
-                return;
-            }
-            if (tries++ > 200) {
-                clearInterval(interval);
-                console.log('[MAD PLUS] ℹ Camera lock: window.se.camera not found — skipping hook');
-            }
-        }, 100);
     })();
 
     // ── 4. Tab 2 Split Functions ─────────────────────────────────
@@ -2648,11 +2521,37 @@ window._3rbStopSkinSync = function () {
             })(i * 60);
         }
     }
+
+    // ── 6. Fast Respawn / Kill the OTHER (background) tab ────────
+    // Sends spectate opcode (1) to kill current cell without disconnect, then spawns instantly
+    function fastRespawnOtherTab() {
+        var otherSlot = (window._3rbControlledTab === 1) ? 2 : 1;
+        var ws = (otherSlot === 2) ? window._3rbSlot2Sock : window._3rbSlot1Sock;
+
+        if (ws && ws.readyState === 1) {
+            var op1 = (ws._3rbQe && ws._3rbQe[1] !== undefined) ? ws._3rbQe[1] : 1;
+            try { ws._nativeSend(new Uint8Array([op1]).buffer); } catch(e) {}
+        }
+
+        if (window.classA) {
+            if (otherSlot === 2) window.classA.isAliveTab2 = false;
+            else window.classA.isAliveTab1 = false;
+        }
+
+        setTimeout(function() {
+            if (window.classQ) {
+                window.classQ.myTurn = true;
+                try { window.classQ.spawn(otherSlot); } catch(e) {}
+            }
+        }, 120);
+    }
+
     // Keep old name as alias for any external code that might call it
     window._3rbSplitTab2    = splitOtherTab;
     window._3rbSplitOtherTab = splitOtherTab;
+    window._3rbFastRespawnOtherTab = fastRespawnOtherTab;
 
-    // ── 6. Keyboard Listener for the split hotkeys ───────────────
+    // ── 7. Keyboard Listener for the Tab 2 hotkeys ───────────────
     // Read key value live from the DOM input (HSLO sets .value programmatically so
     // 'onchange' never fires — reading at event-time is the only reliable approach).
     function readTab2Key(elId, windowVar, storageKey, fallback) {
@@ -2675,6 +2574,7 @@ window._3rbStopSkinSync = function () {
         var splitKey   = readTab2Key('_3rb-key-tab2-split',   '_3rbKeyTab2Split',   '_3rbKeyTab2Split',   'Z');
         var doubleKey  = readTab2Key('_3rb-key-tab2-double',  '_3rbKeyTab2Double',  '_3rbKeyTab2Double',  'X');
         var split16Key = readTab2Key('_3rb-key-tab2-split16', '_3rbKeyTab2Split16', '_3rbKeyTab2Split16', 'C');
+        var respawnKey = readTab2Key('_3rb-key-tab2-respawn', '_3rbKeyTab2Respawn', '_3rbKeyTab2Respawn', 'V');
 
         if (keyMatches(splitKey, ev)) {
             ev.stopImmediatePropagation();
@@ -2688,6 +2588,10 @@ window._3rbStopSkinSync = function () {
             ev.stopImmediatePropagation();
             ev.preventDefault();
             splitOtherTab(4); // Split 16
+        } else if (keyMatches(respawnKey, ev)) {
+            ev.stopImmediatePropagation();
+            ev.preventDefault();
+            fastRespawnOtherTab(); // Fast Respawn / Kill
         }
     }, true); // capture=true fires before HSLO's own keydown listeners
 
