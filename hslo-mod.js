@@ -2419,16 +2419,15 @@ window._3rbStopSkinSync = function () {
 (function initHsloExtensions() {
 
     // ── 1. Load saved settings ──────────────────────────────────
-    window._3rbKeyTab2Split     = localStorage.getItem('_3rbKeyTab2Split')     || 'Z';
-    window._3rbKeyTab2Double    = localStorage.getItem('_3rbKeyTab2Double')    || 'X';
+    window._3rbKeyTab2Split       = localStorage.getItem('_3rbKeyTab2Split')       || 'Z';
+    window._3rbKeyTab2Double      = localStorage.getItem('_3rbKeyTab2Double')      || 'X';
     // _3rbKeyTab2Split16 replaces the old _3rbKeyTab2Trick. Fall back to the old saved value for backward-compat.
-    window._3rbKeyTab2Split16   = localStorage.getItem('_3rbKeyTab2Split16')   ||
-                                   localStorage.getItem('_3rbKeyTab2Trick')     || 'C';
+    window._3rbKeyTab2Split16     = localStorage.getItem('_3rbKeyTab2Split16')     ||
+                                     localStorage.getItem('_3rbKeyTab2Trick')       || 'C';
     // Keep _3rbKeyTab2Trick as an alias so any code still reading the old name continues to work.
-    window._3rbKeyTab2Trick     = window._3rbKeyTab2Split16;
-    window._3rbKeyTab2Respawn   = localStorage.getItem('_3rbKeyTab2Respawn')   || 'V';
-    window._3rbKeySingleCam     = localStorage.getItem('_3rbKeySingleCam')     || 'J';
-    window._3rbFocusSingleCam   = localStorage.getItem('_3rbFocusSingleCam')   === 'true';
+    window._3rbKeyTab2Trick       = window._3rbKeyTab2Split16;
+    window._3rbKeyTab2Respawn     = localStorage.getItem('_3rbKeyTab2Respawn')     || 'V';
+    window._3rbKeepLastDirection  = localStorage.getItem('_3rbKeepLastDirection')  === 'true';
 
     // Restore saved key values into the hotkey input boxes once the DOM is ready
     (function restoreTab2Keys() {
@@ -2438,14 +2437,13 @@ window._3rbStopSkinSync = function () {
             var d   = document.getElementById('_3rb-key-tab2-double');
             var s16 = document.getElementById('_3rb-key-tab2-split16');
             var rsp = document.getElementById('_3rb-key-tab2-respawn');
-            var scm = document.getElementById('_3rb-key-singlecam');
 
-            // Restore UI button state for Focus Single Tab Camera
-            var btnOff = document.getElementById('_3rb-toggle-singlecam-off');
-            var btnOn  = document.getElementById('_3rb-toggle-singlecam-on');
+            // Restore UI button state for Continuous Background Direction
+            var btnOff = document.getElementById('_3rb-toggle-keepdir-off');
+            var btnOn  = document.getElementById('_3rb-toggle-keepdir-on');
             if (btnOff && btnOn) {
-                btnOff.className = window._3rbFocusSingleCam ? '' : 'active';
-                btnOn.className  = window._3rbFocusSingleCam ? 'active' : '';
+                btnOff.className = window._3rbKeepLastDirection ? '' : 'active';
+                btnOn.className  = window._3rbKeepLastDirection ? 'active' : '';
             }
 
             if (s && d && s16) {
@@ -2454,22 +2452,10 @@ window._3rbStopSkinSync = function () {
                 d.value   = window._3rbKeyTab2Double;
                 s16.value = window._3rbKeyTab2Split16;
                 if (rsp) rsp.value = window._3rbKeyTab2Respawn;
-                if (scm) scm.value = window._3rbKeySingleCam;
             }
             if (tries++ > 100) clearInterval(t);
         }, 200);
     })();
-
-    // Helper: update single camera UI toggle state
-    function updateSingleCamUI() {
-        localStorage.setItem('_3rbFocusSingleCam', window._3rbFocusSingleCam ? 'true' : 'false');
-        var btnOff = document.getElementById('_3rb-toggle-singlecam-off');
-        var btnOn  = document.getElementById('_3rb-toggle-singlecam-on');
-        if (btnOff && btnOn) {
-            btnOff.className = window._3rbFocusSingleCam ? '' : 'active';
-            btnOn.className  = window._3rbFocusSingleCam ? 'active' : '';
-        }
-    }
 
     // ── 4. Tab 2 Split Functions ─────────────────────────────────
 

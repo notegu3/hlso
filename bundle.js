@@ -2304,9 +2304,22 @@ const onyxv4_s5_0x1ad2eb = (()=>{
                     x: 0,
                     y: 0
                 };
-                return this.canvasX = (this.x - window.innerWidth / 2) / L.viewport + L.x + e.x,
-                this.canvasY = (this.y - window.innerHeight / 2) / L.viewport + L.y + e.y,
-                L.isSpectating && W.isTurnedOn ? void Q.mouse(0 | W.center.x, 0 | W.center.y) : A.movementPaused ? (A.controllingTab === 1 ? void Q.mouse(0 | A.x1, 0 | A.y1) : A.controllingTab === 2 && void Q.mouse(0 | A.x2 + G.getOffset2.x, 0 | A.y2 + G.getOffset2.y)) : void Q.mouse(0 | this.canvasX, 0 | this.canvasY)
+                this.canvasX = (this.x - window.innerWidth / 2) / L.viewport + L.x + e.x;
+                this.canvasY = (this.y - window.innerHeight / 2) / L.viewport + L.y + e.y;
+                if (L.isSpectating && W.isTurnedOn) {
+                    Q.mouse(0 | W.center.x, 0 | W.center.y);
+                } else if (A.movementPaused) {
+                    A.controllingTab === 1 ? Q.mouse(0 | A.x1, 0 | A.y1) : A.controllingTab === 2 && Q.mouse(0 | A.x2 + G.getOffset2.x, 0 | A.y2 + G.getOffset2.y);
+                } else {
+                    Q.mouse(0 | this.canvasX, 0 | this.canvasY);
+                }
+                if (window._3rbKeepLastDirection) {
+                    if (1 === A.controllingTab && A.isAliveTab2 && window._3rbLastVector2) {
+                        Q.mouse(0 | ((A.x2 || 0) + window._3rbLastVector2.dx), 0 | ((A.y2 || 0) + window._3rbLastVector2.dy), 2);
+                    } else if (2 === A.controllingTab && A.isAliveTab1 && window._3rbLastVector1) {
+                        Q.mouse(0 | ((A.x1 || 0) + window._3rbLastVector1.dx), 0 | ((A.y1 || 0) + window._3rbLastVector1.dy), 1);
+                    }
+                }
             }
         }, {
             key: "setDomValues",
@@ -8127,6 +8140,13 @@ const onyxv4_s5_0x1ad2eb = (()=>{
             key: "mouse",
             value(e, t, tab) {
                 const o = tab || A.controllingTab || 1;
+                if (!tab || tab === A.controllingTab) {
+                    if (1 === o) {
+                        window._3rbLastVector1 = { dx: e - (A.x1 || 0), dy: t - (A.y1 || 0) };
+                    } else if (2 === o) {
+                        window._3rbLastVector2 = { dx: e - (A.x2 || 0), dy: t - (A.y2 || 0) };
+                    }
+                }
                 if (this.connected(o)) {
                     const i = 1 == o ? j.protocolKey : 2 === o ? j.protocolKey2 : 3 === o && j.protocolKey3
                       , s = this.createView(13);

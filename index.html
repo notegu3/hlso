@@ -835,11 +835,11 @@
         </div>
         <div class="row divider"></div>
         <div class="row">
-          <span class="title">Focus Single Tab Camera</span>
-          <span class="settings-options" type="options" name="__3rbSingleCam">
+          <span class="title">Continuous Background Direction (Never Stop)</span>
+          <span class="settings-options" type="options" name="__3rbKeepDir">
             <i class="fas fa-chevron-left" aria-hidden="true"></i>
-            <b id="_3rb-toggle-singlecam-off" value="off" class="active" onclick="window._3rbFocusSingleCam=false; localStorage.setItem('_3rbFocusSingleCam','false'); document.querySelectorAll('#settings [name=__3rbSingleCam] b').forEach(function(b){b.className='';}); this.className='active';">Off</b>
-            <b id="_3rb-toggle-singlecam-on" value="on" onclick="window._3rbFocusSingleCam=true; localStorage.setItem('_3rbFocusSingleCam','true'); document.querySelectorAll('#settings [name=__3rbSingleCam] b').forEach(function(b){b.className='';}); this.className='active';">On</b>
+            <b id="_3rb-toggle-keepdir-off" value="off" class="active" onclick="window._3rbKeepLastDirection=false; localStorage.setItem('_3rbKeepLastDirection','false'); document.querySelectorAll('#settings [name=__3rbKeepDir] b').forEach(function(b){b.className='';}); this.className='active';">Off</b>
+            <b id="_3rb-toggle-keepdir-on" value="on" onclick="window._3rbKeepLastDirection=true; localStorage.setItem('_3rbKeepLastDirection','true'); document.querySelectorAll('#settings [name=__3rbKeepDir] b').forEach(function(b){b.className='';}); this.className='active';">On</b>
             <i class="fas fa-chevron-right" aria-hidden="true"></i>
           </span>
         </div>
