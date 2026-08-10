@@ -2529,31 +2529,38 @@ window._3rbStopSkinSync = function () {
         var otherSlot = (window._3rbControlledTab === 1) ? 2 : 1;
         console.log('[MAD PLUS] 🔄 Fast Respawn target slot:', otherSlot);
 
-        if (window.classq && typeof window.classq.reconnect === 'function') {
-            try {
-                window.classq.reconnect(otherSlot);
-            } catch(e) {
-                console.warn('[MAD PLUS] classq.reconnect error:', e);
-            }
-        } else {
-            var ws = (otherSlot === 2) ? window._3rbSlot2Sock : window._3rbSlot1Sock;
-            if (ws && ws.readyState === 1) {
-                try { ws.close(); } catch(e) {}
-            }
+        // 1. Close target socket to destroy current cell on 3rb server
+        var oldWs = (otherSlot === 2) ? window._3rbSlot2Sock : window._3rbSlot1Sock;
+        if (oldWs) {
+            try { oldWs.close(); } catch(e) {}
         }
 
-        // Auto-trigger spawn for the target tab slot as soon as the new socket connects
+        if (window.classA) {
+            if (otherSlot === 2) window.classA.isAliveTab2 = false;
+            else window.classA.isAliveTab1 = false;
+        }
+
+        // 2. Trigger HSLO reconnect for target slot
+        if (window.classq && typeof window.classq.reconnect === 'function') {
+            try { window.classq.reconnect(otherSlot); } catch(e) {}
+        }
+
+        // 3. Monitor new socket connection and send 3rb.io V5 spawn payload directly
         var checks = 0;
         var t = setInterval(function() {
-            var sock = (otherSlot === 2) ? window._3rbSlot2Sock : window._3rbSlot1Sock;
-            if (sock && sock.readyState === 1) {
+            var proxy = (otherSlot === 2) ? window._3rbProxySlot2 : window._3rbProxySlot1;
+            var sock  = (otherSlot === 2) ? window._3rbSlot2Sock  : window._3rbSlot1Sock;
+
+            if (sock && sock.readyState === 1 && proxy && typeof proxy._sendV5Spawn === 'function') {
                 clearInterval(t);
-                if (window.classQ) {
-                    window.classQ.myTurn = true;
-                    try { window.classQ.spawn(otherSlot); } catch(e) {}
+                console.log('[MAD PLUS] 🚀 Sending direct 3rb V5 spawn for slot:', otherSlot);
+                proxy._sendV5Spawn(new Uint8Array([0]));
+                if (window.classA) {
+                    if (otherSlot === 2) window.classA.isAliveTab2 = true;
+                    else window.classA.isAliveTab1 = true;
                 }
             }
-            if (checks++ > 30) clearInterval(t);
+            if (checks++ > 40) clearInterval(t);
         }, 100);
     }
 
