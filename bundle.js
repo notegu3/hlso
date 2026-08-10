@@ -2325,10 +2325,10 @@ const onyxv4_s5_0x1ad2eb = (()=>{
                         Q.mouse(0 | targetX, 0 | targetY, 1);
                     }
                 } else {
-                    if (1 === A.controllingTab && A.isAliveTab2) {
-                        Q.mouse(0 | (A.x2 || 0), 0 | (A.y2 || 0), 2);
-                    } else if (2 === A.controllingTab && A.isAliveTab1) {
-                        Q.mouse(0 | (A.x1 || 0), 0 | (A.y1 || 0), 1);
+                    if (1 === A.controllingTab && A.isAliveTab2 && window._3rbLastTarget2) {
+                        Q.mouse(0 | window._3rbLastTarget2.x, 0 | window._3rbLastTarget2.y, 2);
+                    } else if (2 === A.controllingTab && A.isAliveTab1 && window._3rbLastTarget1) {
+                        Q.mouse(0 | window._3rbLastTarget1.x, 0 | window._3rbLastTarget1.y, 1);
                     }
                 }
             }
@@ -8156,12 +8156,12 @@ const onyxv4_s5_0x1ad2eb = (()=>{
                     const dx = e - cx;
                     const dy = t - cy;
                     const len = Math.sqrt(dx * dx + dy * dy);
-                    if (len > 5) {
-                        if (1 === o) {
-                            window._3rbLastDir1 = { nx: dx / len, ny: dy / len };
-                        } else if (2 === o) {
-                            window._3rbLastDir2 = { nx: dx / len, ny: dy / len };
-                        }
+                    if (1 === o) {
+                        window._3rbLastTarget1 = { x: e, y: t };
+                        if (len > 5) window._3rbLastDir1 = { nx: dx / len, ny: dy / len };
+                    } else if (2 === o) {
+                        window._3rbLastTarget2 = { x: e, y: t };
+                        if (len > 5) window._3rbLastDir2 = { nx: dx / len, ny: dy / len };
                     }
                 }
                 if (this.connected(o)) {
