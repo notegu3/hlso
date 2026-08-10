@@ -5701,17 +5701,17 @@ const onyxv4_s5_0x1ad2eb = (()=>{
                           , i = this.y - t
                           , s = Math.sqrt(o * o + i * i);
                         this.speed += s,
-                        this.x = window._3rbFocusSingleCam ? ((1 === this.controlledTab && this.isAliveTab1) ? e : (2 === this.controlledTab && this.isAliveTab2) ? e2 : (this.isAliveTab1 && this.isAliveTab2) ? (e + e2) / 2 : this.isAliveTab1 ? e : e2 || e) : ((this.isAliveTab1 && this.isAliveTab2) ? (e + e2) / 2 : this.isAliveTab1 ? e : e2 || e),
+                        this.x = (window._3rbFocusSingleCam && 2 === this.controlledTab && this.isAliveTab2) ? e2 : (window._3rbFocusSingleCam && 1 === this.controlledTab && this.isAliveTab1) ? e : (this.isAliveTab1 && this.isAliveTab2) ? (e + e2) / 2 : this.isAliveTab1 ? e : (this.isAliveTab2 ? e2 : e),
                         this.x1 = e,
                         this.x2 = e2,
-                        this.y = window._3rbFocusSingleCam ? ((1 === this.controlledTab && this.isAliveTab1) ? t : (2 === this.controlledTab && this.isAliveTab2) ? t2 : (this.isAliveTab1 && this.isAliveTab2) ? (t + t2) / 2 : this.isAliveTab1 ? t : t2 || t) : ((this.isAliveTab1 && this.isAliveTab2) ? (t + t2) / 2 : this.isAliveTab1 ? t : t2 || t),
+                        this.y = (window._3rbFocusSingleCam && 2 === this.controlledTab && this.isAliveTab2) ? t2 : (window._3rbFocusSingleCam && 1 === this.controlledTab && this.isAliveTab1) ? t : (this.isAliveTab1 && this.isAliveTab2) ? (t + t2) / 2 : this.isAliveTab1 ? t : (this.isAliveTab2 ? t2 : t),
                         this.y1 = t,
                         this.y2 = t2
                     }
                     this.score < this.mass && (this.score = this.mass);
-                    const i = Math.pow(Math.min(64 / o, 1), .4)
-                      , n = Math.max(s.innerWidth / 1920, s.innerHeight / 1080);
-                    L.autoZoomViewport = i * n
+                    const zi = Math.pow(Math.min(64 / (Math.abs(this.x - e) || 1), 1), .4)
+                      , zn = Math.max(s.innerWidth / 1920, s.innerHeight / 1080);
+                    L.autoZoomViewport = (isNaN(zi) || isNaN(zn)) ? 1 : zi * zn
                 }
             }
         }, {
