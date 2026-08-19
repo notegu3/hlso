@@ -2322,7 +2322,9 @@ window._3rbStopSkinSync = function () {
 
         var _origSwitch = mgr.switch.bind(mgr);
         mgr.switch = function(slot) {
-            _origSwitch(slot);
+            try {
+                _origSwitch(slot);
+            } catch(e) {}
             // After HSLO sets the profile, clear the placeholder skin from the inputs.
             var s1 = document.getElementById('skin');
             var s2 = document.getElementById('skin2');
@@ -2338,7 +2340,9 @@ window._3rbStopSkinSync = function () {
 
         // Trigger immediately for the currently selected profile
         var currentSlot = mgr.selected || 1;
-        mgr.switch(currentSlot);
+        try {
+            mgr.switch(currentSlot);
+        } catch(e) {}
         return true;
     }
 
